@@ -8,16 +8,10 @@
 module SaveData
   DIRECTORY      = (File.directory?(System.data_directory)) ? System.data_directory : "./"
   FILENAME_REGEX = /Game(\d*)\.rxdata$/
-  # Contains the file path of the save file.
-  FILE_PATH = if File.directory?(System.data_directory)
-                System.data_directory + "/Game.rxdata"
-              else
-                "./Game.rxdata"
-              end
 
-  # @return [Boolean] whether the save file exists
+  # @return [Boolean] whether any save files exist
   def self.exists?
-    return File.file?(FILE_PATH)
+    return !all_save_files.empty?
   end
 
   # @return[Array] array of filenames in the save folder that are save files
@@ -60,7 +54,7 @@ module SaveData
   def self.read_from_file(file_path)
     validate file_path => String
     save_data = get_data_from_file(file_path)
-    save_data = to_hash_format(save_data) if save_data.is_a?(Array)
+    save_data = to_hash_format(save_data) if save_data.is_a?(Array)   # Pre-v19 save file support
     if !save_data.empty? && run_conversions(save_data)
       File.open(file_path, "wb") { |file| Marshal.dump(save_data, file) }
     end
@@ -82,6 +76,11 @@ module SaveData
   def self.delete_file(filename)
     File.delete(DIRECTORY + filename)
     File.delete(DIRECTORY + filename + ".bak") if File.file?(DIRECTORY + filename + ".bak")
+  end
+
+  def self.filename_from_index(index = 0)
+    return "Game.rxdata" if index <= 0
+    return "Game#{index}.rxdata"
   end
 
   # Converts the pre-v19 format data to the new format.

@@ -27,9 +27,7 @@ module Game
     pbSetResizeFactor([$PokemonSystem.screensize, 4].min)
     # Set language (and choose language if there is no save file)
     if !Settings::LANGUAGES.empty?
-      # TODO: Change this to check for any save file.
-      save_data = (SaveData.exists?) ? SaveData.read_from_file(SaveData::FILE_PATH) : {}
-      $PokemonSystem.language = pbChooseLanguage if save_data.empty? && Settings::LANGUAGES.length >= 2
+      $PokemonSystem.language = pbChooseLanguage if !SaveData.exists? && Settings::LANGUAGES.length >= 2
       MessageTypes.load_message_files(Settings::LANGUAGES[$PokemonSystem.language][1])
     end
   end
@@ -41,7 +39,6 @@ module Game
       $game_map.events.each_value { |event| event.clear_starting }
     end
     $game_temp.common_event_id = 0 if $game_temp
-    $game_temp.begun_new_game = true
     pbMapInterpreter&.clear
     pbMapInterpreter&.setup(nil, 0, 0)
     $scene = Scene_Map.new
@@ -104,18 +101,21 @@ module Game
   end
 
   # Saves the game. Returns whether the operation was successful.
-  # @param save_file [String] the save file path
+  # @param index [Integer] the number to put in the save file's name Game#.rzdata
+  # @param directory [String] the folder to put the save file in
   # @param safe [Boolean] whether $PokemonGlobal.safesave should be set to true
   # @return [Boolean] whether the operation was successful
   # @raise [SaveData::InvalidValueError] if an invalid value is being saved
-  def save(save_file = SaveData::FILE_PATH, safe: false)
-    validate save_file => String, safe => [TrueClass, FalseClass]
+  def save(index, directory = SaveData::DIRECTORY, safe: false)
+    validate index => Integer, directory => String, safe => [TrueClass, FalseClass]
+    filename = SaveData.filename_from_index(index)
     $PokemonGlobal.safesave = safe
     $game_system.save_count += 1
     $game_system.magic_number = $data_system.magic_number
     $stats.set_time_last_saved
+    $stats.save_filename_number = index
     begin
-      SaveData.save_to_file(save_file)
+      SaveData.save_to_file(directory + filename)
       Graphics.frame_reset
     rescue IOError, SystemCallError
       $game_system.save_count -= 1

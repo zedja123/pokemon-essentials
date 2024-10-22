@@ -2,6 +2,8 @@
 #
 #===============================================================================
 class UI::LoadPanel < UI::SpriteContainer
+  attr_writer :label
+
   GRAPHICS_FOLDER = "Load/"
   TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
     :default => [Color.new(88, 88, 80), Color.new(168, 184, 184)]   # Base and shadow colour
@@ -258,13 +260,16 @@ end
 #===============================================================================
 class UI::LoadVisuals < UI::BaseVisuals
   attr_reader :slot_index
+  attr_reader :save_data
 
   GRAPHICS_FOLDER    = "Load/"   # Subfolder in Graphics/UI
   PANEL_SPACING_EDGE = 4
   PANEL_SPACING      = PANEL_SPACING_EDGE * 2
 
-  # save_data here is an array of all save files' data. It has been compacted.
-  # commands is {:continue => _INTL("Continue"), :new_game => _INTL("New Game")}, etc.
+  # save_data here is an array of [save filename, save data hash]. It has been
+  # compacted.
+  # commands is {:continue => _INTL("Continue"), :new_game => _INTL("New Game")},
+  # etc.
   def initialize(commands, save_data, default_slot_index = 0)
     @save_data = save_data
     @commands = commands
@@ -372,7 +377,13 @@ class UI::LoadVisuals < UI::BaseVisuals
     # Determine whether the Mystery Gift option is visible
     @sprites[:mystery_gift].visible = @save_data[@slot_index][1][:player].mystery_gift_unlocked
     refresh_panel_positions
+    # Set the options, and change the language if relevant
+    old_language = $PokemonSystem.language
     SaveData.load_bootup_values(@save_data[@slot_index][1], true)
+    if $PokemonSystem.language != old_language
+      MessageTypes.load_message_files(Settings::LANGUAGES[$PokemonSystem.language][1])
+      full_refresh
+    end
     pbPlayCursorSE if !forced
   end
 
@@ -395,6 +406,7 @@ class UI::LoadVisuals < UI::BaseVisuals
 
   def full_refresh
     refresh
+    refresh_labels
     @sprites.each_pair { |key, sprite| sprite.refresh if sprite.respond_to?(:refresh) }
   end
 
@@ -429,6 +441,16 @@ class UI::LoadVisuals < UI::BaseVisuals
     end
     @sprites[:continue_previous]&.selected = false
     @sprites[:continue_next]&.selected = false
+  end
+
+  def refresh_labels
+    MenuHandlers.each_available(:load_screen, self) do |option, _hash, name|
+      @sprites[option].label = name
+      if option == :continue
+        @sprites[:continue_previous].label = name
+        @sprites[:continue_next].label = name
+      end
+    end
   end
 
   def refresh_on_index_changed(old_index)
@@ -503,7 +525,7 @@ class UI::Load < UI::BaseScreen
   SCREEN_ID = :load_screen
 
   def initialize
-    load_save_data
+    load_all_save_data
     if $DEBUG && !FileTest.exist?("Game.rgssad") && Settings::SKIP_CONTINUE_SCREEN
       @disposed = true
       perform_action((@save_data.empty?) ? :new_game : :continue)
@@ -532,22 +554,15 @@ class UI::Load < UI::BaseScreen
 
   #-----------------------------------------------------------------------------
 
-  def load_save_data
+  # TODO: Move this kind of code into module SaveData.
+  def load_all_save_data
     @save_data = []
     @default_slot_index = 0
     last_edited_time = nil
     files = SaveData.all_save_files
     files.each do |file|
       # Load the save file
-      this_save_data = SaveData.read_from_file(SaveData::DIRECTORY + file)
-      if !SaveData.valid?(this_save_data)
-        if File.file?(SaveData::DIRECTORY + file + ".bak")
-          show_message(_INTL("The save file is corrupt. A backup will be loaded."))
-          this_save_data = load_save_file(SaveData::FILE_PATH + ".bak")
-        else
-          prompt_corrupted_save_deletion(file)
-        end
-      end
+      this_save_data = load_save_file(SaveData::DIRECTORY, file)
       @save_data.push([file, this_save_data])
       # Find the most recently edited save file; default to selecting that one
       save_time = this_save_data[:stats].real_time_saved || 0
@@ -557,14 +572,31 @@ class UI::Load < UI::BaseScreen
       end
     end
     SaveData.load_bootup_values(@save_data[@default_slot_index][1], true) if !@save_data.empty?
+    MessageTypes.load_message_files(Settings::LANGUAGES[$PokemonSystem.language][1])
+  end
+
+  # TODO: Move this kind of code into module SaveData.
+  def load_save_file(directory, filename)
+    ret = SaveData.read_from_file(directory + filename)
+    if !SaveData.valid?(ret)
+      if File.file?(directory + filename + ".bak")
+        show_message(_INTL("The save file is corrupt. A backup will be loaded."))
+        ret = load_save_file(directory, filename + ".bak")
+      end
+      if prompt_corrupted_save_deletion(filename)
+        delete_save_data(filename)
+        $PokemonSystem = PokemonSystem.new
+      else
+        exit
+      end
+    end
+    return ret
   end
 
   def prompt_corrupted_save_deletion(filename)
     show_message(_INTL("The save file is corrupt, or is incompatible with this game.") + "\1")
     pbPlayDecisionSE
-    exit if !show_confirm_serious_message(_INTL("Do you want to delete the save file and start anew?"))
-    delete_save_data(filename)
-    $PokemonSystem = PokemonSystem.new
+    return show_confirm_serious_message(_INTL("Do you want to delete the save file and start anew?"))
   end
 
   def prompt_save_deletion(filename)
@@ -672,6 +704,10 @@ UIActionHandlers.add(UI::Load::SCREEN_ID, :delete_save, {
 
 #===============================================================================
 # Menu options that exist in the load screen.
+# NOTE: This can also be called when screen is UI::LoadVisuals (for
+#       retranslating the names upon selecting a save file with a different
+#       language). Try not to have a condition that references things only in
+#       UI::Load.
 #===============================================================================
 MenuHandlers.add(:load_screen, :continue, {
   "name"      => _INTL("Continue"),
