@@ -252,7 +252,7 @@ MenuHandlers.add(:pause_menu, :pokegear, {
 MenuHandlers.add(:pause_menu, :town_map, {
   "name"      => _INTL("Town Map"),
   "order"     => 40,
-  "condition" => proc { next !$player.has_pokegear && $bag.has?(:TOWNMAP) },
+  "condition" => proc { next Settings::SHOW_TOWN_MAP_IN_PAUSE_MENU && !$player.has_pokegear && $bag.has?(:TOWNMAP) },
   "effect"    => proc { |menu|
     pbPlayDecisionSE
     pbFadeOutIn do

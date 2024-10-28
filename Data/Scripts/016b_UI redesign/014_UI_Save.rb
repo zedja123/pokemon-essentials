@@ -323,12 +323,16 @@ class UI::SaveVisuals < UI::BaseVisuals
         if @save_data[index][1][:game_system].adventure_magic_number == $game_system.adventure_magic_number
           save_time = @save_data[index][1][:stats].real_play_time
           delta_time = ($stats.play_time - save_time).to_i
-          hour = (delta_time / 60) / 60
-          min  = (delta_time / 60) % 60
-          if hour > 0
-            draw_text(_INTL("Play time since save: {1}h {2}m", hour, min), 8, 4)
+          if delta_time >= 0
+            hour = (delta_time / 60) / 60
+            min  = (delta_time / 60) % 60
+            if hour > 0
+              draw_text(_INTL("Play time since save: {1}h {2}m", hour, min), 8, 4)
+            else
+              draw_text(_INTL("Play time since save: {1}m", min), 8, 4)
+            end
           else
-            draw_text(_INTL("Play time since save: {1}m", min), 8, 4)
+            draw_text(_INTL("Alternate version of your adventure!"), 8, 4)
           end
         else
           draw_text(_INTL("Different adventure!"), 8, 4)
@@ -411,9 +415,12 @@ class UI::Save < UI::BaseScreen
 
   SCREEN_ID = :save_screen
 
+  include UI::LoadSaveDataMixin
+
   def initialize
     create_current_save_data
     load_all_save_data
+    determine_default_save_file
     super
   end
 
@@ -439,14 +446,7 @@ class UI::Save < UI::BaseScreen
     }]
   end
 
-  def load_all_save_data
-    # Load the save file
-    @save_data = []
-    files = SaveData.all_save_files
-    files.each do |file|
-      this_save_data = load_save_file(SaveData::DIRECTORY, file)
-      @save_data.push([file, this_save_data])
-    end
+  def determine_default_save_file
     # Find the save file index matching the current game's filename number
     if $stats.save_filename_number && $stats.save_filename_number >= 0
       expected_filename = SaveData.filename_from_index($stats.save_filename_number)
@@ -454,38 +454,6 @@ class UI::Save < UI::BaseScreen
       @default_index ||= @save_data.length   # Just in case
     else
       @default_index = @save_data.length   # New save slot
-    end
-  end
-
-  def load_save_file(directory, filename)
-    ret = SaveData.read_from_file(directory + filename)
-    if !SaveData.valid?(ret)
-      if File.file?(directory + filename + ".bak")
-        show_message(_INTL("The save file is corrupt. A backup will be loaded."))
-        ret = load_save_file(directory, filename + ".bak")
-      end
-      if prompt_corrupted_save_deletion(filename)
-        delete_save_data(filename)
-      else
-        exit
-      end
-    end
-    return ret
-  end
-
-  def prompt_corrupted_save_deletion(filename)
-    show_message(_INTL("The save file is corrupt, or is incompatible with this game.") + "\1")
-    pbPlayDecisionSE
-    return show_confirm_serious_message(_INTL("Do you want to delete the save file and start anew?"))
-  end
-
-  def delete_save_data(filename)
-    begin
-      SaveData.delete_file(filename)
-      yield if block_given?
-      show_message(_INTL("The save file was deleted."))
-    rescue SystemCallError
-      show_message(_INTL("The save file could not be deleted."))
     end
   end
 

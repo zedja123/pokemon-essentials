@@ -1,3 +1,47 @@
+module UI::LoadSaveDataMixin
+  def load_all_save_data
+    @save_data = []
+    files = SaveData.all_save_files
+    files.each do |file|
+      this_save_data = load_save_file(SaveData::DIRECTORY, file)
+      @save_data.push([file, this_save_data])
+    end
+  end
+
+  def load_save_file(directory, filename)
+    ret = SaveData.read_from_file(directory + filename)
+    if !SaveData.valid?(ret)
+      if File.file?(directory + filename + ".bak")
+        show_message(_INTL("The save file is corrupt. A backup will be loaded."))
+        ret = load_save_file(directory, filename + ".bak")
+      end
+      if prompt_corrupted_save_deletion(filename)
+        delete_save_data(filename)
+        $PokemonSystem = PokemonSystem.new if self.is_a?(UI::Load)
+      else
+        exit
+      end
+    end
+    return ret
+  end
+
+  def prompt_corrupted_save_deletion(filename)
+    show_message(_INTL("The save file is corrupt, or is incompatible with this game.") + "\1")
+    pbPlayDecisionSE
+    return show_confirm_serious_message(_INTL("Do you want to delete the save file and start anew?"))
+  end
+
+  def delete_save_data(filename)
+    begin
+      SaveData.delete_file(filename)
+      yield if block_given?
+      show_message(_INTL("The save file was deleted."))
+    rescue SystemCallError
+      show_message(_INTL("The save file could not be deleted."))
+    end
+  end
+end
+
 #===============================================================================
 #
 #===============================================================================
@@ -380,7 +424,7 @@ class UI::LoadVisuals < UI::BaseVisuals
     # Set the options, and change the language if relevant
     old_language = $PokemonSystem.language
     SaveData.load_bootup_values(@save_data[@slot_index][1], true)
-    if $PokemonSystem.language != old_language
+    if $PokemonSystem.language != old_language && Settings::LANGUAGES[$PokemonSystem.language]
       MessageTypes.load_message_files(Settings::LANGUAGES[$PokemonSystem.language][1])
       full_refresh
     end
@@ -502,6 +546,16 @@ class UI::LoadVisuals < UI::BaseVisuals
         return :delete_save
       end
       return update_interaction(Input::USE)
+    elsif Input.trigger?(Input::JUMPUP)
+      if @index != @commands.keys[0]
+        pbPlayCursorSE
+        set_index(@commands.keys[0])
+      end
+    elsif Input.trigger?(Input::JUMPDOWN)
+      if @index != @commands.keys[@commands.length - 1]
+        pbPlayCursorSE
+        set_index(@commands.keys[@commands.length - 1])
+      end
     end
     return nil
   end
@@ -524,8 +578,11 @@ class UI::Load < UI::BaseScreen
 
   SCREEN_ID = :load_screen
 
+  include UI::LoadSaveDataMixin
+
   def initialize
     load_all_save_data
+    determine_default_save_file
     if $DEBUG && !FileTest.exist?("Game.rgssad") && Settings::SKIP_CONTINUE_SCREEN
       @disposed = true
       perform_action((@save_data.empty?) ? :new_game : :continue)
@@ -554,49 +611,18 @@ class UI::Load < UI::BaseScreen
 
   #-----------------------------------------------------------------------------
 
-  # TODO: Move this kind of code into module SaveData.
-  def load_all_save_data
-    @save_data = []
+  def determine_default_save_file
     @default_slot_index = 0
     last_edited_time = nil
-    files = SaveData.all_save_files
-    files.each do |file|
-      # Load the save file
-      this_save_data = load_save_file(SaveData::DIRECTORY, file)
-      @save_data.push([file, this_save_data])
-      # Find the most recently edited save file; default to selecting that one
-      save_time = this_save_data[:stats].real_time_saved || 0
+    @save_data.each_with_index do |data, i|
+      save_time = data[1][:stats].real_time_saved || 0
       if !last_edited_time || save_time > last_edited_time
         last_edited_time = save_time
-        @default_slot_index = @save_data.length - 1
+        @default_slot_index = i
       end
     end
     SaveData.load_bootup_values(@save_data[@default_slot_index][1], true) if !@save_data.empty?
-    MessageTypes.load_message_files(Settings::LANGUAGES[$PokemonSystem.language][1])
-  end
-
-  # TODO: Move this kind of code into module SaveData.
-  def load_save_file(directory, filename)
-    ret = SaveData.read_from_file(directory + filename)
-    if !SaveData.valid?(ret)
-      if File.file?(directory + filename + ".bak")
-        show_message(_INTL("The save file is corrupt. A backup will be loaded."))
-        ret = load_save_file(directory, filename + ".bak")
-      end
-      if prompt_corrupted_save_deletion(filename)
-        delete_save_data(filename)
-        $PokemonSystem = PokemonSystem.new
-      else
-        exit
-      end
-    end
-    return ret
-  end
-
-  def prompt_corrupted_save_deletion(filename)
-    show_message(_INTL("The save file is corrupt, or is incompatible with this game.") + "\1")
-    pbPlayDecisionSE
-    return show_confirm_serious_message(_INTL("Do you want to delete the save file and start anew?"))
+    MessageTypes.load_message_files(Settings::LANGUAGES[$PokemonSystem.language][1]) if Settings::LANGUAGES[$PokemonSystem.language]
   end
 
   def prompt_save_deletion(filename)
@@ -609,16 +635,6 @@ class UI::Load < UI::BaseScreen
           @visuals.refresh_after_save_file_deleted
         }
       end
-    end
-  end
-
-  def delete_save_data(filename)
-    begin
-      SaveData.delete_file(filename)
-      yield if block_given?
-      show_message(_INTL("The save file was deleted."))
-    rescue SystemCallError
-      show_message(_INTL("The save file could not be deleted."))
     end
   end
 
