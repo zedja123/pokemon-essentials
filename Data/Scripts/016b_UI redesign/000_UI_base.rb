@@ -588,7 +588,7 @@ module UI
     def choose_number_as_money_multiplier(help_text, money_per_unit, maximum, init_value = 1)
       @sprites[:speech_box].visible = true
       @sprites[:speech_box].text = help_text
-      position_speech_box(text)
+      position_speech_box(help_text)
       # Show the help text
       loop do
         Graphics.update

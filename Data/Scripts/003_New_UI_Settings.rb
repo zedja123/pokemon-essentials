@@ -37,6 +37,13 @@ module Settings
                   "Pt park", "Pt route", "Pt sea", "Pt town"]
   }
 
+  # Whether a move's power/type/category/etc. as shown in battle, the summary
+  # screen and the Move Reminder screen will appear as their calculated values
+  # (true) or their values from the PBS file moves.txt (false). For example, if
+  # this is true, Judgment's displayed type will depend on the Plate being held
+  # by the Pokémon that knows it.
+  SHOW_MODIFIED_MOVE_PROPERTIES = false
+
   # TODO: Allow renaming a Pokémon from the party screen/summary screen (not
   #       sure which). Gen 9 feature.
   # TODO: Allow forgetting/remembering moves from the summary screen. Gen 9

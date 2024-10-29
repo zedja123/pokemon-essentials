@@ -465,6 +465,7 @@ class UI::BagSellVisuals < UI::BagVisuals
   end
 
   def refresh_on_index_changed(old_index)
+    super
     refresh_unit_price_window
   end
 end

@@ -10,13 +10,10 @@ SaveData.register(:player) do
 end
 
 SaveData.register(:game_system) do
-  # TODO: Am I sure this doesn't need to be loaded in bootup?
-#  load_in_bootup
   ensure_class :Game_System
   save_value { $game_system }
   load_value { |value| $game_system = value }
   new_game_value { Game_System.new }
-#  reset_on_new_game
 end
 
 SaveData.register(:pokemon_system) do
