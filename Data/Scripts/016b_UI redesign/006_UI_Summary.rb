@@ -27,7 +27,6 @@ class UI::PokemonSummaryMoveCursor < ChangelingSprite
     self.visible = (@index >= 0)
   end
 
-
   def refresh_position
     return if @index < 0
     self.x = UI::PokemonSummaryVisuals::MOVE_LIST_X_DETAILED - CURSOR_THICKNESS

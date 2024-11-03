@@ -1,3 +1,4 @@
+=begin
 #===============================================================================
 # Scene class for handling appearance of the screen.
 #===============================================================================
@@ -197,3 +198,4 @@ def pbRelearnMoveScreen(pkmn)
   end
   return retval
 end
+=end
