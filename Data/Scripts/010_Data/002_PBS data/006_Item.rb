@@ -30,7 +30,7 @@ module GameData
       "NamePlural"        => [:real_name_plural,         "s"],
       "PortionName"       => [:real_portion_name,        "s"],
       "PortionNamePlural" => [:real_portion_name_plural, "s"],
-      "Pocket"            => [:pocket,                   "v"],
+      "Pocket"            => [:pocket,                   "y", :BagPocket],
       "Price"             => [:price,                    "u"],
       "SellPrice"         => [:sell_price,               "u"],
       "BPPrice"           => [:bp_price,                 "u"],
@@ -126,7 +126,7 @@ module GameData
       @real_name_plural         = hash[:real_name_plural] || "Unnamed"
       @real_portion_name        = hash[:real_portion_name]
       @real_portion_name_plural = hash[:real_portion_name_plural]
-      @pocket                   = hash[:pocket]           || 1
+      @pocket                   = hash[:pocket]           || :None
       @price                    = hash[:price]            || 0
       @sell_price               = hash[:sell_price]       || (@price / Settings::ITEM_SELL_PRICE_DIVISOR)
       @bp_price                 = hash[:bp_price]         || 1
@@ -144,6 +144,15 @@ module GameData
     # @return [String] the translated name of this item
     def name
       return pbGetMessageFromHash(MessageTypes::ITEM_NAMES, @real_name)
+    end
+
+    def display_name
+      ret = name
+      if is_machine?
+        machine = @move
+        ret = sprintf("%s %s", ret, GameData::Move.get(@move).name)
+      end
+      return ret
     end
 
     # @return [String] the translated plural version of the name of this item
@@ -166,6 +175,10 @@ module GameData
     # @return [String] the translated description of this item
     def description
       return pbGetMessageFromHash(MessageTypes::ITEM_DESCRIPTIONS, @real_description)
+    end
+
+    def bag_pocket
+      return GameData::BagPocket.get(@pocket).bag_pocket
     end
 
     def has_flag?(flag)

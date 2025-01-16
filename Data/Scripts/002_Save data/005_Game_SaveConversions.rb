@@ -72,6 +72,18 @@ end
 
 #===============================================================================
 
+SaveData.register_conversion(:v22_add_adventure_magic_number) do
+  essentials_version 22
+  display_title "Adding adventure ID"
+  to_value :game_system do |game_system|
+    game_system.instance_eval do
+      @adventure_magic_number ||= rand(2**32)
+    end
+  end
+end
+
+#===============================================================================
+
 SaveData.register_conversion(:v22_add_new_stats) do
   essentials_version 22
   display_title "Adding some more stats"
@@ -80,6 +92,43 @@ SaveData.register_conversion(:v22_add_new_stats) do
       @wild_battles_fled = 0 if !@wild_battles_fled
       @pokemon_release_count = 0 if !@pokemon_release_count
       @primal_reversion_count = 0 if !@primal_reversion_count
+    end
+  end
+end
+
+#===============================================================================
+
+SaveData.register_conversion(:v22_convert_bag_object) do
+  essentials_version 22
+  display_title "Converting Bag's pockets"
+  to_value :bag do |bag|
+    bag.instance_eval do
+      all_pockets = GameData::BagPocket.all_pockets
+      if @pockets.is_a?(Array)
+        new_pockets = {}
+        all_pockets.each { |pckt| new_pockets[pckt] = [] }
+        @pockets.each_with_index do |value, i|
+          next if i == 0
+          value.each do |item|
+            pckt = GameData::Item.get(item[0]).bag_pocket
+            new_pockets[pckt].push(item)
+          end
+        end
+        @pockets = new_pockets
+      end
+      if @last_viewed_pocket.is_a?(Integer)
+        @last_viewed_pocket = all_pockets[@last_viewed_pocket - 1] || all_pockets.first
+      end
+      if @last_pocket_selections.is_a?(Array)
+        new_sels = {}
+        all_pockets.each { |pckt| new_sels[pckt] = 0 }
+        @last_pocket_selections.each_with_index do |value, i|
+          next if i == 0
+          pckt = all_pockets[i - 1]
+          new_sels[pckt] = value if pckt && value <= @pockets[pckt].length - 1
+        end
+        @last_pocket_selections = new_sels
+      end
     end
   end
 end

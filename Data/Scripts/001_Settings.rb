@@ -46,7 +46,7 @@ module Settings
   #-----------------------------------------------------------------------------
 
   # The maximum amount of money the player can have.
-  MAX_MONEY            = 999_999
+  MAX_MONEY            = 9_999_999
   # The maximum number of Game Corner coins the player can have.
   MAX_COINS            = 99_999
   # The maximum number of Battle Points the player can have.
@@ -54,7 +54,7 @@ module Settings
   # The maximum amount of soot the player can have.
   MAX_SOOT             = 9_999
   # The maximum length, in characters, that the player's name can be.
-  MAX_PLAYER_NAME_SIZE = 10
+  MAX_PLAYER_NAME_SIZE = 12
   # A set of arrays each containing a trainer type followed by a Game Variable
   # number. If the Variable isn't set to 0, then all trainers with the
   # associated trainer type will be named as whatever is in that Variable.
@@ -88,13 +88,13 @@ module Settings
   SAFARI_STEPS               = 600
   # The number of seconds a Bug-Catching Contest lasts for (0=infinite).
   BUG_CONTEST_TIME           = 20 * 60   # 20 minutes
-  # Pairs of map IDs, where the location signpost isn't shown when moving from
-  # one of the maps in a pair to the other (and vice versa). Useful for single
-  # long routes/towns that are spread over multiple maps.
+  # Pairs of map IDs, where the location sign isn't shown when moving from one
+  # of the maps in a pair to the other (and vice versa). Useful for single long
+  # routes/towns that are spread over multiple maps.
   #   e.g. [4,5,16,17,42,43] will be map pairs 4,5 and 16,17 and 42,43.
   # Moving between two maps that have the exact same name won't show the
-  # location signpost anyway, so you don't need to list those maps here.
-  NO_SIGNPOSTS               = []
+  # location sign anyway, so you don't need to list those maps here.
+  NO_LOCATION_SIGNS          = []
   # Whether poisoned Pokémon will lose HP while walking around in the field.
   POISON_IN_FIELD            = (MECHANICS_GENERATION <= 4)
   # Whether poisoned Pokémon will faint while walking around in the field
@@ -186,30 +186,58 @@ module Settings
     66 => [5, 21, 28, 31, 39, 41, 44, 47,     69],
     69 => [5, 21, 28, 31, 39, 41, 44, 47, 66    ]
   }
-  # A set of arrays, each containing the details of a roaming Pokémon. The
-  # information within each array is as follows:
-  #   * Species.
-  #   * Level.
-  #   * Game Switch; the Pokémon roams while this is ON.
-  #   * Encounter type (see def pbRoamingMethodAllowed for their use):
-  #       0 = grass, walking in cave, surfing
-  #       1 = grass, walking in cave
-  #       2 = surfing
-  #       3 = fishing
-  #       4 = surfing, fishing
-  #   * Name of BGM to play for that encounter (optional).
-  #   * Roaming areas specifically for this Pokémon (optional; used instead of
-  #     ROAMING_AREAS).
+  # A set of hashes, each containing the details of a roaming Pokémon. The
+  # information within each hash is as follows:
+  #   * :species
+  #   * :level
+  #   * :icon - Filename in Graphics/UI/Town Map/ of the roamer's Town Map icon.
+  #   * :game_switch - The Pokémon roams if this is nil or <=0 or if that Game
+  #                    Switch is ON. Optional.
+  #   * :encounter_type - One of:
+  #       :all = grass, walking in cave, surfing (default)
+  #       :land = grass, walking in cave
+  #       :water = surfing, fishing
+  #       :surfing = surfing
+  #       :fishing = fishing
+  #   * :bgm - The BGM to play for the encounter. Optional.
+  #   * :areas - A hash of map IDs that determine where this Pokémon roams. Used
+  #              instead of ROAMING_AREAS above. Optional.
   ROAMING_SPECIES = [
-    [:LATIAS, 30, 53, 0, "Battle roaming"],
-    [:LATIOS, 30, 53, 0, "Battle roaming"],
-    [:KYOGRE, 40, 54, 2, nil, {
-      2  => [   21, 31    ],
-      21 => [2,     31, 69],
-      31 => [2, 21,     69],
-      69 => [   21, 31    ]
-    }],
-    [:ENTEI, 40, 55, 1]
+    {
+      :species        => :LATIAS,
+      :level          => 30,
+      :icon           => "pin_latias",
+      :game_switch    => 53,
+      :encounter_type => :all,
+      :bgm            => "Battle roaming"
+    },
+    {
+      :species        => :LATIOS,
+      :level          => 30,
+      :icon           => "pin_latios",
+      :game_switch    => 53,
+      :encounter_type => :all,
+      :bgm            => "Battle roaming"
+    },
+    {
+      :species        => :KYOGRE,
+      :level          => 40,
+      :game_switch    => 54,
+      :encounter_type => :surfing,
+      :areas          => {
+        2  => [   21, 31    ],
+        21 => [2,     31, 69],
+        31 => [2, 21,     69],
+        69 => [   21, 31    ]
+      }
+    },
+    {
+      :species        => :ENTEI,
+      :level          => 40,
+      :icon           => "pin_entei",
+      :game_switch    => 55,
+      :encounter_type => :land
+    }
   ]
 
   #-----------------------------------------------------------------------------
@@ -258,31 +286,6 @@ module Settings
   # The default sell price of an item to a Poké Mart is its buy price divided by
   # this number.
   ITEM_SELL_PRICE_DIVISOR              = (MECHANICS_GENERATION >= 9) ? 4 : 2
-
-  #-----------------------------------------------------------------------------
-  # Bag
-  #-----------------------------------------------------------------------------
-
-  # The names of each pocket of the Bag.
-  def self.bag_pocket_names
-    return [
-      _INTL("Items"),
-      _INTL("Medicine"),
-      _INTL("Poké Balls"),
-      _INTL("TMs & HMs"),
-      _INTL("Berries"),
-      _INTL("Mail"),
-      _INTL("Battle Items"),
-      _INTL("Key Items")
-    ]
-  end
-  # The maximum number of slots per pocket (-1 means infinite number).
-  BAG_MAX_POCKET_SIZE  = [-1, -1, -1, -1, -1, -1, -1, -1]
-  # Whether each pocket in turn auto-sorts itself by the order items are defined
-  # in the PBS file items.txt.
-  BAG_POCKET_AUTO_SORT = [false, false, false, true, true, false, false, false]
-  # The maximum number of items each slot in the Bag can hold.
-  BAG_MAX_PER_SLOT     = 999
 
   #-----------------------------------------------------------------------------
   # Pokédex

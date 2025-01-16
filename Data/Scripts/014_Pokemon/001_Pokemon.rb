@@ -94,7 +94,7 @@ class Pokemon
   # Max EVs that a single stat can have
   EV_STAT_LIMIT = 252
   # Maximum length a Pokémon's nickname can be
-  MAX_NAME_SIZE = 10
+  MAX_NAME_SIZE = 12
   # Maximum number of moves a Pokémon can know at once
   MAX_MOVES     = 4
 
@@ -312,6 +312,21 @@ class Pokemon
     heal_status
     heal_PP
     @ready_to_evolve = false
+  end
+
+  #-----------------------------------------------------------------------------
+  # Stats.
+  #-----------------------------------------------------------------------------
+  def stat(id)
+    case id
+    when :HP              then return @totalhp
+    when :ATTACK          then return @attack
+    when :DEFENSE         then return @defense
+    when :SPECIAL_ATTACK  then return @spatk
+    when :SPECIAL_DEFENSE then return @spdef
+    when :SPEED           then return @speed
+    end
+    return 0
   end
 
   #-----------------------------------------------------------------------------
@@ -560,6 +575,7 @@ class Pokemon
   def item=(value)
     return if value && !GameData::Item.exists?(value)
     @item = (value) ? GameData::Item.get(value).id : value
+    @mail = nil if @item.nil?
   end
 
   # Returns whether this Pokémon is holding an item. If an item id is passed,
@@ -593,6 +609,7 @@ class Pokemon
       raise ArgumentError, _INTL("Invalid value {1} given", mail.inspect)
     end
     @mail = mail
+    @item = mail&.item
   end
 
   #-----------------------------------------------------------------------------

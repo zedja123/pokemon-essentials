@@ -97,6 +97,10 @@ module MenuHandlers
     @@handlers[menu]&.clear
   end
 
+  def get(menu, option)
+    return @@handlers[menu][option]
+  end
+
   def each(menu)
     return if !@@handlers.has_key?(menu)
     @@handlers[menu].each { |option, hash| yield option, hash }
@@ -110,8 +114,19 @@ module MenuHandlers
     sorted_keys.each do |option|
       hash = options[option]
       next if hash["condition"] && !hash["condition"].call(*args)
+      if hash["multi_options"]
+        extra_options = hash["multi_options"].call(*args)
+        if extra_options && extra_options.length > 0
+          if extra_options[0].is_a?(Array)
+            extra_options.each { |opt| yield *opt }
+          else
+            yield *extra_options
+          end
+        end
+        next
+      end
       if hash["name"].is_a?(Proc)
-        name = hash["name"].call
+        name = hash["name"].call(*args)
       else
         name = _INTL(hash["name"])
       end
@@ -123,5 +138,36 @@ module MenuHandlers
     option_hash = @@handlers[menu][option]
     return nil if !option_hash || !option_hash[function]
     return option_hash[function].call(*args)
+  end
+end
+
+#===============================================================================
+#
+#===============================================================================
+module UIActionHandlers
+  @@handlers = {}
+
+  module_function
+
+  def add(menu, action, hash)
+    @@handlers[menu] = HandlerHash.new if !@@handlers.has_key?(menu)
+    @@handlers[menu].add(action, hash)
+  end
+
+  def remove(menu, action)
+    @@handlers[menu]&.remove(action)
+  end
+
+  def clear(menu)
+    @@handlers[menu]&.clear
+  end
+
+  def get(menu, action)
+    return @@handlers[menu][action]
+  end
+
+  def each(menu)
+    return if !@@handlers.has_key?(menu)
+    @@handlers[menu].each { |action, hash| yield action, hash }
   end
 end

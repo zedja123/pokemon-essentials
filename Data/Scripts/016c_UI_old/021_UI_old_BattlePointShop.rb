@@ -1,3 +1,4 @@
+=begin
 #===============================================================================
 # Abstraction layer for Pokemon Essentials.
 #===============================================================================
@@ -343,7 +344,7 @@ class BattlePointShop_Scene
       numwindow.height = 64
       numwindow.baseColor = Color.new(88, 88, 80)
       numwindow.shadowColor = Color.new(168, 184, 184)
-      numwindow.text = _INTL("x{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
+      numwindow.text = _INTL("×{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
       pbBottomRight(numwindow)
       numwindow.y -= helpwindow.height
       loop do
@@ -356,28 +357,28 @@ class BattlePointShop_Scene
           curnumber -= 10
           curnumber = 1 if curnumber < 1
           if curnumber != oldnumber
-            numwindow.text = _INTL("x{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
+            numwindow.text = _INTL("×{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
             pbPlayCursorSE
           end
         elsif Input.repeat?(Input::RIGHT)
           curnumber += 10
           curnumber = maximum if curnumber > maximum
           if curnumber != oldnumber
-            numwindow.text = _INTL("x{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
+            numwindow.text = _INTL("×{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
             pbPlayCursorSE
           end
         elsif Input.repeat?(Input::UP)
           curnumber += 1
           curnumber = 1 if curnumber > maximum
           if curnumber != oldnumber
-            numwindow.text = _INTL("x{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
+            numwindow.text = _INTL("×{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
             pbPlayCursorSE
           end
         elsif Input.repeat?(Input::DOWN)
           curnumber -= 1
           curnumber = maximum if curnumber < 1
           if curnumber != oldnumber
-            numwindow.text = _INTL("x{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
+            numwindow.text = _INTL("×{1}<r>{2} BP", curnumber, (curnumber * itemprice).to_s_formatted)
             pbPlayCursorSE
           end
         elsif Input.trigger?(Input::USE)
@@ -462,8 +463,8 @@ class BattlePointShopScreen
                                  itemname, price.to_s_formatted))
         quantity = 1
       else
-        maxafford = (price <= 0) ? Settings::BAG_MAX_PER_SLOT : @adapter.getBP / price
-        maxafford = Settings::BAG_MAX_PER_SLOT if maxafford > Settings::BAG_MAX_PER_SLOT
+        maxafford = (price <= 0) ? PokemonBag::MAX_PER_SLOT : @adapter.getBP / price
+        maxafford = PokemonBag::MAX_PER_SLOT if maxafford > PokemonBag::MAX_PER_SLOT
         quantity = @scene.pbChooseNumber(
           _INTL("How many {1} would you like?", itemnameplural), item, maxafford
         )
@@ -504,22 +505,4 @@ class BattlePointShopScreen
     @scene.pbEndScene
   end
 end
-
-#===============================================================================
-#
-#===============================================================================
-def pbBattlePointShop(stock, speech = nil)
-  stock.delete_if { |item| GameData::Item.get(item).is_important? && $bag.has?(item) }
-  if speech.nil?
-    pbMessage(_INTL("Welcome to the Exchange Service Corner!"))
-    pbMessage(_INTL("We can exchange your BP for fabulous items."))
-  else
-    pbMessage(speech)
-  end
-  scene = BattlePointShop_Scene.new
-  screen = BattlePointShopScreen.new(scene, stock)
-  screen.pbBuyScreen
-  pbMessage(_INTL("Thank you for visiting."))
-  pbMessage(_INTL("Please visit us again when you have saved up more BP."))
-  $game_temp.clear_mart_prices
-end
+=end

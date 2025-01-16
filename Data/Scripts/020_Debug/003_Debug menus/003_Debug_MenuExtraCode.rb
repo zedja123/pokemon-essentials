@@ -362,9 +362,7 @@ def pbDebugDayCare
                        [_INTL("Summary"), _INTL("Withdraw"), _INTL("Cancel")], 3)
         when 0   # Summary
           pbFadeOutIn do
-            scene = PokemonSummary_Scene.new
-            screen = PokemonSummaryScreen.new(scene, false)
-            screen.pbStartScreen([pkmn], 0)
+            UI::PokemonSummary.new(pkmn).main
             need_refresh = true
           end
         when 1   # Withdraw
@@ -450,10 +448,10 @@ class SpriteWindow_DebugRoamers < Window_DrawableCommand
       self.shadowtext(_INTL("[Clear all current roamer locations]"), rect.x, rect.y, nameWidth, rect.height)
     else
       pkmn = Settings::ROAMING_SPECIES[index]
-      name = GameData::Species.get(pkmn[0]).name + " (Lv. #{pkmn[1]})"
+      name = GameData::Species.get(pkmn[:species]).name + " (Lv. #{pkmn[:level]})"
       status = ""
       statuscolor = 0
-      if pkmn[2] <= 0 || $game_switches[pkmn[2]]
+      if !pkmn[:game_switch] || pkmn[:game_switch] <= 0 || $game_switches[pkmn[:game_switch]]
         status = $PokemonGlobal.roamPokemon[index]
         if status == true
           if $PokemonGlobal.roamPokemonCaught[index]
@@ -474,7 +472,7 @@ class SpriteWindow_DebugRoamers < Window_DrawableCommand
           statuscolor = 2
         end
       else
-        status = "[NOT ROAMING][Switch #{pkmn[2]} is off]"
+        status = "[NOT ROAMING][Switch #{pkmn[:game_switch]} is off]"
       end
       self.shadowtext(name, rect.x, rect.y, nameWidth, rect.height)
       self.shadowtext(status, rect.x + nameWidth, rect.y, statusWidth, rect.height, 1, statuscolor)
@@ -502,7 +500,7 @@ def pbDebugRoamers
       pkmn = nil
     end
     if Input.trigger?(Input::ACTION) && cmdwindow.index < cmdwindow.roamerCount &&
-       (pkmn[2] <= 0 || $game_switches[pkmn[2]]) &&
+       (!pkmn[:game_switch] || pkmn[:game_switch] <= 0 || $game_switches[pkmn[:game_switch]]) &&
        $PokemonGlobal.roamPokemon[cmdwindow.index] != true
       # Roam selected Pokémon
       pbPlayDecisionSE
@@ -529,9 +527,9 @@ def pbDebugRoamers
       if cmdwindow.index < cmdwindow.roamerCount
         pbPlayDecisionSE
         # Toggle through roaming, not roaming, defeated
-        if pkmn[2] > 0 && !$game_switches[pkmn[2]]
+        if pkmn[:game_switch] && pkmn[:game_switch] > 0 && !$game_switches[pkmn[:game_switch]]
           # not roaming -> roaming
-          $game_switches[pkmn[2]] = true
+          $game_switches[pkmn[:game_switch]] = true
         elsif $PokemonGlobal.roamPokemon[cmdwindow.index] != true
           # roaming -> defeated
           $PokemonGlobal.roamPokemon[cmdwindow.index] = true
@@ -540,9 +538,9 @@ def pbDebugRoamers
               !$PokemonGlobal.roamPokemonCaught[cmdwindow.index]
           # defeated -> caught
           $PokemonGlobal.roamPokemonCaught[cmdwindow.index] = true
-        elsif pkmn[2] > 0
+        elsif pkmn[:game_switch] && pkmn[:game_switch] > 0
           # caught -> not roaming (or roaming if Switch ID is 0)
-          $game_switches[pkmn[2]] = false if pkmn[2] > 0
+          $game_switches[pkmn[:game_switch]] = false if pkmn[:game_switch] && pkmn[:game_switch] > 0
           $PokemonGlobal.roamPokemon[cmdwindow.index] = nil
           $PokemonGlobal.roamPokemonCaught[cmdwindow.index] = false
         end
@@ -763,134 +761,4 @@ def pbCheckTileValidity(tile_id, map, tilesets, passages)
     return true if passages[tile_id]
   end
   return false
-end
-
-#===============================================================================
-# Pseudo-party screen for editing Pokémon being set up for a wild battle.
-#===============================================================================
-class PokemonDebugPartyScreen
-  def initialize
-    @viewport = Viewport.new(0, 0, Graphics.width, Graphics.height)
-    @viewport.z = 99999
-    @messageBox = Window_AdvancedTextPokemon.new("")
-    @messageBox.viewport       = @viewport
-    @messageBox.visible        = false
-    @messageBox.letterbyletter = true
-    pbBottomLeftLines(@messageBox, 2)
-    @helpWindow = Window_UnformattedTextPokemon.new("")
-    @helpWindow.viewport = @viewport
-    @helpWindow.visible  = true
-    pbBottomLeftLines(@helpWindow, 1)
-  end
-
-  def pbEndScreen
-    @messageBox.dispose
-    @helpWindow.dispose
-    @viewport.dispose
-  end
-
-  def pbDisplay(text)
-    @messageBox.text    = text
-    @messageBox.visible = true
-    @helpWindow.visible = false
-    pbPlayDecisionSE
-    loop do
-      Graphics.update
-      Input.update
-      pbUpdate
-      if @messageBox.busy?
-        if Input.trigger?(Input::USE)
-          pbPlayDecisionSE if @messageBox.pausing?
-          @messageBox.resume
-        end
-      else
-        if Input.trigger?(Input::BACK) || Input.trigger?(Input::USE)
-          break
-        end
-      end
-    end
-    @messageBox.visible = false
-    @helpWindow.visible = true
-  end
-
-  def pbConfirm(text)
-    ret = -1
-    @messageBox.text    = text
-    @messageBox.visible = true
-    @helpWindow.visible = false
-    using(cmdwindow = Window_CommandPokemon.new([_INTL("Yes"), _INTL("No")])) do
-      cmdwindow.visible = false
-      pbBottomRight(cmdwindow)
-      cmdwindow.y -= @messageBox.height
-      cmdwindow.z = @viewport.z + 1
-      loop do
-        Graphics.update
-        Input.update
-        cmdwindow.visible = true if !@messageBox.busy?
-        cmdwindow.update
-        pbUpdate
-        if !@messageBox.busy?
-          if Input.trigger?(Input::BACK)
-            ret = false
-            break
-          elsif Input.trigger?(Input::USE) && @messageBox.resume
-            ret = (cmdwindow.index == 0)
-            break
-          end
-        end
-      end
-    end
-    @messageBox.visible = false
-    @helpWindow.visible = true
-    return ret
-  end
-
-  def pbShowCommands(text, commands, index = 0)
-    ret = -1
-    @helpWindow.visible = true
-    using(cmdwindow = Window_CommandPokemonColor.new(commands)) do
-      cmdwindow.z     = @viewport.z + 1
-      cmdwindow.index = index
-      pbBottomRight(cmdwindow)
-      @helpWindow.resizeHeightToFit(text, Graphics.width - cmdwindow.width)
-      @helpWindow.text = text
-      pbBottomLeft(@helpWindow)
-      loop do
-        Graphics.update
-        Input.update
-        cmdwindow.update
-        pbUpdate
-        if Input.trigger?(Input::BACK)
-          pbPlayCancelSE
-          ret = -1
-          break
-        elsif Input.trigger?(Input::USE)
-          pbPlayDecisionSE
-          ret = cmdwindow.index
-          break
-        end
-      end
-    end
-    return ret
-  end
-
-  def pbChooseMove(pkmn, text, index = 0)
-    moveNames = []
-    pkmn.moves.each do |i|
-      if i.total_pp <= 0
-        moveNames.push(_INTL("{1} (PP: ---)", i.name))
-      else
-        moveNames.push(_INTL("{1} (PP: {2}/{3})", i.name, i.pp, i.total_pp))
-      end
-    end
-    return pbShowCommands(text, moveNames, index)
-  end
-
-  def pbRefreshSingle(index); end
-
-  def update
-    @messageBox.update
-    @helpWindow.update
-  end
-  alias pbUpdate update
 end

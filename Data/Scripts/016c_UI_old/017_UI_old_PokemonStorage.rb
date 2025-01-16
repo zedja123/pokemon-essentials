@@ -1,3 +1,4 @@
+=begin
 #===============================================================================
 # Pokémon icons.
 #===============================================================================
@@ -156,15 +157,15 @@ class PokemonBoxArrow < Sprite
     @quickswap  = false
     @heldpkmn   = nil
     @handsprite = ChangelingSprite.new(0, 0, viewport)
-    @handsprite.addBitmap("point1", "Graphics/UI/Storage/cursor_point_1")
-    @handsprite.addBitmap("point2", "Graphics/UI/Storage/cursor_point_2")
-    @handsprite.addBitmap("grab", "Graphics/UI/Storage/cursor_grab")
-    @handsprite.addBitmap("fist", "Graphics/UI/Storage/cursor_fist")
-    @handsprite.addBitmap("point1q", "Graphics/UI/Storage/cursor_point_1_q")
-    @handsprite.addBitmap("point2q", "Graphics/UI/Storage/cursor_point_2_q")
-    @handsprite.addBitmap("grabq", "Graphics/UI/Storage/cursor_grab_q")
-    @handsprite.addBitmap("fistq", "Graphics/UI/Storage/cursor_fist_q")
-    @handsprite.changeBitmap("fist")
+    @handsprite.add_bitmap(:point1, "Graphics/UI/Storage/cursor_point_1")
+    @handsprite.add_bitmap(:point2, "Graphics/UI/Storage/cursor_point_2")
+    @handsprite.add_bitmap(:grab, "Graphics/UI/Storage/cursor_grab")
+    @handsprite.add_bitmap(:fist, "Graphics/UI/Storage/cursor_fist")
+    @handsprite.add_bitmap(:point1q, "Graphics/UI/Storage/cursor_point_1_q")
+    @handsprite.add_bitmap(:point2q, "Graphics/UI/Storage/cursor_point_2_q")
+    @handsprite.add_bitmap(:grabq, "Graphics/UI/Storage/cursor_grab_q")
+    @handsprite.add_bitmap(:fistq, "Graphics/UI/Storage/cursor_fist_q")
+    @handsprite.change_bitmap(:fist)
     @spriteX = self.x
     @spriteY = self.y
   end
@@ -269,36 +270,36 @@ class PokemonBoxArrow < Sprite
     @holding = false if !heldpkmn
     if @grabbing_timer_start
       if System.uptime - @grabbing_timer_start <= GRAB_TIME / 2
-        @handsprite.changeBitmap((@quickswap) ? "grabq" : "grab")
+        @handsprite.change_bitmap((@quickswap) ? :grabq : :grab)
         self.y = @spriteY + lerp(0, 16, GRAB_TIME / 2, @grabbing_timer_start, System.uptime)
       else
         @holding = true
-        @handsprite.changeBitmap((@quickswap) ? "fistq" : "fist")
+        @handsprite.change_bitmap((@quickswap) ? :fistq : :fist)
         delta_y = lerp(16, 0, GRAB_TIME / 2, @grabbing_timer_start + (GRAB_TIME / 2), System.uptime)
         self.y = @spriteY + delta_y
         @grabbing_timer_start = nil if delta_y == 0
       end
     elsif @placing_timer_start
       if System.uptime - @placing_timer_start <= GRAB_TIME / 2
-        @handsprite.changeBitmap((@quickswap) ? "fistq" : "fist")
+        @handsprite.change_bitmap((@quickswap) ? :fistq : :fist)
         self.y = @spriteY + lerp(0, 16, GRAB_TIME / 2, @placing_timer_start, System.uptime)
       else
         @holding = false
         @heldpkmn = nil
-        @handsprite.changeBitmap((@quickswap) ? "grabq" : "grab")
+        @handsprite.change_bitmap((@quickswap) ? :grabq : :grab)
         delta_y = lerp(16, 0, GRAB_TIME / 2, @placing_timer_start + (GRAB_TIME / 2), System.uptime)
         self.y = @spriteY + delta_y
         @placing_timer_start = nil if delta_y == 0
       end
     elsif holding?
-      @handsprite.changeBitmap((@quickswap) ? "fistq" : "fist")
+      @handsprite.change_bitmap((@quickswap) ? :fistq : :fist)
     else   # Idling
       self.x = @spriteX
       self.y = @spriteY
       if (System.uptime / 0.5).to_i.even?   # Changes every 0.5 seconds
-        @handsprite.changeBitmap((@quickswap) ? "point1q" : "point1")
+        @handsprite.change_bitmap((@quickswap) ? :point1q : :point1)
       else
-        @handsprite.changeBitmap((@quickswap) ? "point2q" : "point2")
+        @handsprite.change_bitmap((@quickswap) ? :point2q : :point2)
       end
     end
     @updating = false
@@ -501,6 +502,13 @@ class PokemonBoxPartySprite < Sprite
     refresh
   end
 
+  def z=(value)
+    super
+    Settings::MAX_PARTY_SIZE.times do |i|
+      @pokemonsprites[i].z = value + 1 if @pokemonsprites[i] && !@pokemonsprites[i].disposed?
+    end
+  end
+
   def color=(value)
     super
     Settings::MAX_PARTY_SIZE.times do |i|
@@ -565,7 +573,7 @@ class PokemonBoxPartySprite < Sprite
       sprite.viewport = self.viewport
       sprite.x = self.x + xvalues[j]
       sprite.y = self.y + yvalues[j]
-      sprite.z = 1
+      sprite.z = self.z + 1
     end
   end
 
@@ -1237,25 +1245,24 @@ class PokemonStorageScene
   def pbChooseItem(bag)
     ret = nil
     pbFadeOutIn do
-      scene = PokemonBag_Scene.new
-      screen = PokemonBagScreen.new(scene, bag)
-      ret = screen.pbChooseItemScreen(proc { |item| GameData::Item.get(item).can_hold? })
+      bag_screen = UI::Bag.new(bag, mode: :choose_item)
+      bag_screen.set_filter_proc(proc { |itm| GameData::Item.get(itm).can_hold? })
+      ret = bag_screen.choose_item
     end
     return ret
   end
 
   def pbSummary(selected, heldpoke)
     oldsprites = pbFadeOutAndHide(@sprites)
-    scene = PokemonSummary_Scene.new
-    screen = PokemonSummaryScreen.new(scene)
     if heldpoke
-      screen.pbStartScreen([heldpoke], 0)
+      UI::PokemonSummary.new(heldpoke).main
     elsif selected[0] == -1
-      @selection = screen.pbStartScreen(@storage.party, selected[1])
+      screen = UI::PokemonSummary.new(@storage.party, selected[1]).main
+      @selection = screen.result
       pbPartySetArrow(@sprites["arrow"], @selection)
       pbUpdateOverlay(@selection, @storage.party)
     else
-      @selection = screen.pbStartScreen(@storage.boxes[selected[0]], selected[1])
+      @selection = UI::PokemonSummary.new(@storage.boxes[selected[0]].pokemon, selected[1]).main
       pbSetArrow(@sprites["arrow"], @selection)
       pbUpdateOverlay(@selection)
     end
@@ -1576,7 +1583,7 @@ class PokemonStorageScreen
             elsif cmdRelease >= 0 && command == cmdRelease   # Release
               pbRelease(selected, @heldpkmn)
             elsif cmdDebug >= 0 && command == cmdDebug   # Debug
-              pbPokemonDebug((@heldpkmn) ? @heldpkmn : pokemon, selected, heldpoke)
+              pokemon_debug_menu((@heldpkmn) ? @heldpkmn : pokemon, selected, heldpoke)
             end
           end
         end
@@ -2023,3 +2030,4 @@ class PokemonStorageScreen
     return retval
   end
 end
+=end

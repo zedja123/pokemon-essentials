@@ -60,6 +60,11 @@ def pbGetLanguage
   return 2 # Use 'English' by default
 end
 
+def pbChooseLanguage
+  commands = Settings::LANGUAGES.map { |val| val[0] }
+  return pbShowCommands(nil, commands)
+end
+
 # Converts a Celsius temperature to Fahrenheit.
 def toFahrenheit(celsius)
   return (celsius * 9.0 / 5.0).round + 32
@@ -445,39 +450,38 @@ def pbMoveTutorAnnotations(move, movelist = nil)
   return ret
 end
 
-def pbMoveTutorChoose(move, movelist = nil, bymachine = false, oneusemachine = false)
+# TODO: The Bag screen needs passing into this method (if using a machine). If
+#       it exists, refresh it before finishing pbFadeOutIn to update the party
+#       compatibility icons.
+def pbMoveTutorChoose(move, movelist = nil, by_machine = false, one_use_machine = false)
   ret = false
   move = GameData::Move.get(move).id
   if movelist.is_a?(Array)
     movelist.map! { |m| GameData::Move.get(m).id }
   end
   pbFadeOutIn do
-    movename = GameData::Move.get(move).name
+    move_name = GameData::Move.get(move).name
+    screen = UI::Party.new($player.party, mode: :teach_pokemon)
     annot = pbMoveTutorAnnotations(move, movelist)
-    scene = PokemonParty_Scene.new
-    screen = PokemonPartyScreen.new(scene, $player.party)
-    screen.pbStartScene(_INTL("Teach which Pokémon?"), false, annot)
-    loop do
-      chosen = screen.pbChoosePokemon
-      break if chosen < 0
-      pokemon = $player.party[chosen]
-      if pokemon.egg?
-        pbMessage(_INTL("Eggs can't be taught any moves.")) { screen.pbUpdate }
-      elsif pokemon.shadowPokemon?
-        pbMessage(_INTL("Shadow Pokémon can't be taught any moves.")) { screen.pbUpdate }
-      elsif movelist && movelist.none? { |j| j == pokemon.species }
-        pbMessage(_INTL("{1} can't learn {2}.", pokemon.name, movename)) { screen.pbUpdate }
-      elsif !pokemon.compatible_with_move?(move)
-        pbMessage(_INTL("{1} can't learn {2}.", pokemon.name, movename)) { screen.pbUpdate }
-      elsif pbLearnMove(pokemon, move, false, bymachine) { screen.pbUpdate }
-        $stats.moves_taught_by_item += 1 if bymachine
-        $stats.moves_taught_by_tutor += 1 if !bymachine
-        pokemon.add_first_move(move) if oneusemachine
-        ret = true
-        break
+    screen.set_annotations(annot)
+    screen.choose_pokemon do |pkmn, party_index|
+      next true if party_index < 0
+      if pkmn.egg?
+        screen.show_message(_INTL("Eggs can't be taught any moves."))
+      elsif pkmn.shadowPokemon?
+        screen.show_message(_INTL("Shadow Pokémon can't be taught any moves."))
+      elsif movelist && movelist.none? { |j| j == pkmn.species }
+        screen.show_message(_INTL("{1} can't learn {2}.", pkmn.name, move_name))
+      elsif !pkmn.compatible_with_move?(move)
+        screen.show_message(_INTL("{1} can't learn {2}.", pkmn.name, move_name))
+      elsif pbLearnMove(pkmn, move, false, by_machine, screen) { screen.update }
+        $stats.moves_taught_by_item += 1 if by_machine
+        $stats.moves_taught_by_tutor += 1 if !by_machine
+        pkmn.add_first_move(move) if one_use_machine
+        next true
       end
+      next false
     end
-    screen.pbEndScene
   end
   return ret   # Returns whether the move was learned by a Pokemon
 end
@@ -594,14 +598,6 @@ def pbLoadRpgxpScene(scene)
   $scene.createSpritesets
   pbShowObjects(visibleObjects)
   Graphics.transition
-end
-
-def pbChooseLanguage
-  commands = []
-  Settings::LANGUAGES.each do |lang|
-    commands.push(lang[0])
-  end
-  return pbShowCommands(nil, commands)
 end
 
 def pbScreenCapture

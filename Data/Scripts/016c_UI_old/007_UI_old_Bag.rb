@@ -1,3 +1,4 @@
+=begin
 #===============================================================================
 #
 #===============================================================================
@@ -97,7 +98,7 @@ class Window_PokemonBag < Window_DrawableCommand
       end
       if item_data.show_quantity? && !showing_register_icon
         qty = (@filterlist) ? thispocket[@filterlist[@pocket][index]][1] : thispocket[index][1]
-        qtytext = _ISPRINTF("x{1: 3d}", qty)
+        qtytext = _ISPRINTF("×{1: 3d}", qty)
         xQty    = rect.x + rect.width - self.contents.text_size(qtytext).width - 16
         textpos.push([qtytext, xQty, rect.y + 2, :left, baseColor, shadowColor])
       end
@@ -513,10 +514,11 @@ class PokemonBagScreen
           @scene.pbDisplay(_INTL("The {1} can't be held.", itm.portion_name))
         else
           pbFadeOutIn do
-            sscene = PokemonParty_Scene.new
-            sscreen = PokemonPartyScreen.new(sscene, $player.party)
-            sscreen.pbPokemonGiveScreen(item)
-            @scene.pbRefresh
+            screen = UI::Party.new($player.party, mode: :choose_pokemon)
+            screen.choose_pokemon do |pkmn, party_index|
+              pbGiveItemToPokemon(item, screen.pokemon, screen, chosen) if party_index >= 0
+              next true
+            end
           end
         end
       elsif cmdToss >= 0 && command == cmdToss   # Toss item
@@ -702,3 +704,4 @@ class PokemonBagScreen
     @scene.pbEndScene
   end
 end
+=end

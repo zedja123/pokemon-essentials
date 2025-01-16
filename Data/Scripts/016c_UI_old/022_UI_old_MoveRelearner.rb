@@ -1,3 +1,4 @@
+=begin
 #===============================================================================
 # Scene class for handling appearance of the screen.
 #===============================================================================
@@ -84,7 +85,7 @@ class MoveRelearner_Scene
                    0, 78 + ((@sprites["commands"].index - @sprites["commands"].top_item) * 64),
                    0, 0, 258, 72])
     selMoveData = GameData::Move.get(@moves[@sprites["commands"].index])
-    power = selMoveData.display_damage(@pokemon)
+    power = selMoveData.display_power(@pokemon)
     category = selMoveData.display_category(@pokemon)
     accuracy = selMoveData.display_accuracy(@pokemon)
     textpos.push([_INTL("CATEGORY"), 272, 120, :left, Color.new(248, 248, 248), Color.black])
@@ -95,7 +96,7 @@ class MoveRelearner_Scene
     textpos.push([accuracy == 0 ? "---" : "#{accuracy}%", 468, 184, :center,
                   Color.new(64, 64, 64), Color.new(176, 176, 176)])
     pbDrawTextPositions(overlay, textpos)
-    imagepos.push(["Graphics/UI/category", 436, 116, 0, category * CATEGORY_ICON_SIZE[1], *CATEGORY_ICON_SIZE])
+    imagepos.push(["Graphics/UI/category", 436, 116, 0, category * GameData::Move::CATEGORY_ICON_SIZE[1], *GameData::Move::CATEGORY_ICON_SIZE])
     if @sprites["commands"].index < @moves.length - 1
       imagepos.push(["Graphics/UI/Move Reminder/buttons", 48, 350, 0, 0, 76, 32])
     end
@@ -197,3 +198,4 @@ def pbRelearnMoveScreen(pkmn)
   end
   return retval
 end
+=end

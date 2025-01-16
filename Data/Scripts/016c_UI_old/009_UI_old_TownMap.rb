@@ -1,3 +1,4 @@
+=begin
 #===============================================================================
 #
 #===============================================================================
@@ -186,6 +187,8 @@ class PokemonRegionMap_Scene
       next if point[0] != x || point[1] != y
       return "" if point[7] && (@wallmap || point[7] <= 0 || !$game_switches[point[7]])
       name = pbGetMessageFromHash(MessageTypes::REGION_LOCATION_NAMES, point[2])
+      name = name.gsub(/\\PN/, $player.name)
+      name = name.gsub(/\\v\[(\d+)\]/) { |num| $game_variables[$~[1].to_i].to_s }
       return (@editor) ? point[2] : name
     end
     return ""
@@ -336,7 +339,7 @@ class PokemonRegionMapScreen
   end
 
   def pbStartScreen
-    @scene.pbStartScene($DEBUG)
+    @scene.pbStartScene   # ($DEBUG)
     ret = @scene.pbMapScene
     @scene.pbEndScene
     return ret
@@ -354,3 +357,4 @@ def pbShowMap(region = -1, wallmap = true)
     $game_temp.fly_destination = ret if ret && !wallmap
   end
 end
+=end

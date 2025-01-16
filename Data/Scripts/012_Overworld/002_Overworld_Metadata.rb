@@ -23,6 +23,8 @@ class PokemonGlobalMetadata
   attr_accessor :pokedexDex      # Dex currently looking at (-1 is National Dex)
   attr_accessor :pokedexIndex    # Last species viewed per Dex
   attr_accessor :pokedexMode     # Search mode
+  # Town Map
+  attr_accessor :townMapMarkings
   # Day Care
   attr_accessor :day_care
   # Special battle modes
@@ -78,6 +80,8 @@ class PokemonGlobalMetadata
     (numRegions + 1).times do |i|     # National Dex isn't a region, but is included
       @pokedexIndex[i] = 0
     end
+    # Town Map
+    @townMapMarkings      = []
     # Day Care
     @day_care             = DayCare.new
     # Special battle modes

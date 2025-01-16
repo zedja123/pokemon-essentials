@@ -1232,9 +1232,7 @@ class PurifyChamberScene
   def pbSummary(pos, heldpkmn)
     if heldpkmn
       oldsprites = pbFadeOutAndHide(@sprites)
-      scene = PokemonSummary_Scene.new
-      screen = PokemonSummaryScreen.new(scene)
-      screen.pbStartScreen([heldpkmn], 0)
+      UI::PokemonSummary.new(heldpkmn).main
       pbFadeInAndShow(@sprites, oldsprites)
       return
     end
@@ -1251,9 +1249,8 @@ class PurifyChamberScene
     end
     return if party.length == 0
     oldsprites = pbFadeOutAndHide(@sprites)
-    scene = PokemonSummary_Scene.new
-    screen = PokemonSummaryScreen.new(scene)
-    selection = screen.pbStartScreen(party, startindex)
+    screen = UI::PokemonSummary.new(party, startindex).main
+    selection = screen.result
     @sprites["setview"].cursor = indexes[selection]
     pbFadeInAndShow(@sprites, oldsprites)
   end
@@ -1270,13 +1267,19 @@ class PurifyChamberScene
     pbRefresh
   end
 
+  # TODO: Depending on which position is selected, make Shadow Pokémon/non-Shadow
+  #       Pokémon in UI::PokemonStorage semi-transparent and don't let them be
+  #       selected.
+  # TODO: Don't let eggs be selected.
+  # TODO: Don't let the last able Pokémon in the party be selected.
   def pbChoosePokemon
-    visible = pbFadeOutAndHide(@sprites)
-    scene = PokemonStorageScene.new
-    screen = PokemonStorageScreen.new(scene, $PokemonStorage)
-    pos = screen.pbChoosePokemon
-    pbRefresh
-    pbFadeInAndShow(@sprites, visible)
+    pos = nil
+    pbFadeOutInWithUpdate(@sprites) do
+      screen = UI::PokemonStorage.new($PokemonStorage, mode: :choose_pokemon)
+      screen.main
+      pos = screen.result
+      pbRefresh
+    end
     return pos
   end
 end

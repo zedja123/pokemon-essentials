@@ -319,23 +319,27 @@ EventHandlers.add(:on_map_or_spriteset_change, :show_darkness,
   }
 )
 
-# Show location signpost.
-EventHandlers.add(:on_map_or_spriteset_change, :show_location_window,
+# Show location sign.
+EventHandlers.add(:on_map_or_spriteset_change, :show_location_sign,
   proc { |scene, map_changed|
     next if !scene || !scene.spriteset
     next if !map_changed || !$game_map.metadata&.announce_location
-    nosignpost = false
+    no_sign = false
     if $PokemonGlobal.mapTrail[1]
-      (Settings::NO_SIGNPOSTS.length / 2).times do |i|
-        nosignpost = true if Settings::NO_SIGNPOSTS[2 * i] == $PokemonGlobal.mapTrail[1] &&
-                             Settings::NO_SIGNPOSTS[(2 * i) + 1] == $game_map.map_id
-        nosignpost = true if Settings::NO_SIGNPOSTS[(2 * i) + 1] == $PokemonGlobal.mapTrail[1] &&
-                             Settings::NO_SIGNPOSTS[2 * i] == $game_map.map_id
-        break if nosignpost
+      (Settings::NO_LOCATION_SIGNS.length / 2).times do |i|
+        no_sign = true if Settings::NO_LOCATION_SIGNS[2 * i] == $PokemonGlobal.mapTrail[1] &&
+                             Settings::NO_LOCATION_SIGNS[(2 * i) + 1] == $game_map.map_id
+        no_sign = true if Settings::NO_LOCATION_SIGNS[(2 * i) + 1] == $PokemonGlobal.mapTrail[1] &&
+                             Settings::NO_LOCATION_SIGNS[2 * i] == $game_map.map_id
+        break if no_sign
       end
-      nosignpost = true if $game_map.name == pbGetMapNameFromId($PokemonGlobal.mapTrail[1])
+      no_sign = true if $game_map.name == pbGetMapNameFromId($PokemonGlobal.mapTrail[1])
     end
-    scene.spriteset.addUserSprite(LocationWindow.new($game_map.name)) if !nosignpost
+    next if no_sign
+    map_name = $game_map.name
+    location_sign_graphic = $game_map.metadata&.location_sign || Settings::DEFAULT_LOCATION_SIGN_GRAPHIC
+    location_sign_graphic = Settings::DEFAULT_LOCATION_SIGN_GRAPHIC
+    scene.spriteset.addUserSprite(LocationWindow.new(map_name, location_sign_graphic))
   }
 )
 
@@ -684,7 +688,7 @@ def pbItemBall(item, quantity = 1)
   item = GameData::Item.get(item)
   return false if !item || quantity < 1
   itemname = (quantity > 1) ? item.portion_name_plural : item.portion_name
-  pocket = item.pocket
+  pocket = item.bag_pocket
   move = item.move
   if $bag.add(item, quantity)   # If item can be picked up
     meName = (item.is_key_item?) ? "Key item get" : "Item get"
@@ -706,7 +710,7 @@ def pbItemBall(item, quantity = 1)
       pbMessage("\\me[#{meName}]" + _INTL("You found a \\c[1]{1}\\c[0]!", itemname) + "\\wtnp[40]")
     end
     pbMessage(_INTL("You put the {1} in\nyour Bag's <icon=bagPocket{2}>\\c[1]{3}\\c[0] pocket.",
-                    itemname, pocket, PokemonBag.pocket_names[pocket - 1]))
+                    itemname, pocket, GameData::BagPocket.get(pocket).name))
     return true
   end
   # Can't add the item
@@ -734,7 +738,7 @@ def pbReceiveItem(item, quantity = 1)
   item = GameData::Item.get(item)
   return false if !item || quantity < 1
   itemname = (quantity > 1) ? item.portion_name_plural : item.portion_name
-  pocket = item.pocket
+  pocket = item.bag_pocket
   move = item.move
   meName = (item.is_key_item?) ? "Key item get" : "Item get"
   if item == :DNASPLICERS
@@ -756,7 +760,7 @@ def pbReceiveItem(item, quantity = 1)
   end
   if $bag.add(item, quantity)   # If item can be added
     pbMessage(_INTL("You put the {1} in\nyour Bag's <icon=bagPocket{2}>\\c[1]{3}\\c[0] pocket.",
-                    itemname, pocket, PokemonBag.pocket_names[pocket - 1]))
+                    itemname, pocket, GameData::BagPocket.get(pocket).name))
     return true
   end
   return false   # Can't add the item
@@ -769,9 +773,9 @@ def pbBuyPrize(item, quantity = 1)
   item = GameData::Item.get(item)
   return false if !item || quantity < 1
   item_name = (quantity > 1) ? item.portion_name_plural : item.portion_name
-  pocket = item.pocket
+  pocket = item.bag_pocket
   return false if !$bag.add(item, quantity)
   pbMessage("\\CN" + _INTL("You put the {1} in\nyour Bag's <icon=bagPocket{2}>\\c[1]{3}\\c[0] pocket.",
-                           item_name, pocket, PokemonBag.pocket_names[pocket - 1]))
+                           item_name, pocket, GameData::BagPocket.get(pocket).name))
   return true
 end

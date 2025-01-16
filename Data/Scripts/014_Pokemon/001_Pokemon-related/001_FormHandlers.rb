@@ -893,5 +893,5 @@ MultipleForms.register(:QUILAVA, {
 MultipleForms.copy(:QUILAVA,
                    :DEWOTT, :PETILIL, :RUFFLET, :GOOMY, :BERGMITE, :DARTRIX)
 
-# Paldean forms
+# Paldean forms.
 # None!
