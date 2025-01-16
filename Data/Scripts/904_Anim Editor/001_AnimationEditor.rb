@@ -984,13 +984,6 @@ class AnimationEditor
         @components[:particle_list].set_particles(@anim[:particles])
         refresh
       end
-    elsif Input.triggerex?(:C)
-      options = color_scheme_options.keys
-      this_index = options.index(@color_scheme || :light) || 0
-      new_index = (this_index + 1) % options.length
-      @settings[:color_scheme] = options[new_index]
-      self.color_scheme = @settings[:color_scheme]
-      save_settings
     end
   end
 

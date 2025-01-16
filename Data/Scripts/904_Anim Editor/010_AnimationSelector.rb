@@ -397,17 +397,6 @@ class AnimationEditor::AnimationSelector
     refresh
   end
 
-  def update_input
-    if Input.triggerex?(:C)
-      options = color_scheme_options.keys
-      this_index = options.index(@color_scheme || :light) || 0
-      new_index = (this_index + 1) % options.length
-      @settings[:color_scheme] = options[new_index]
-      self.color_scheme = @settings[:color_scheme]
-      save_settings
-    end
-  end
-
   def update
     @components.update
     if @components.changed?
@@ -423,7 +412,6 @@ class AnimationEditor::AnimationSelector
       apply_list_filter
       refresh
     end
-    update_input if !@components.busy?
   end
 
   def run
