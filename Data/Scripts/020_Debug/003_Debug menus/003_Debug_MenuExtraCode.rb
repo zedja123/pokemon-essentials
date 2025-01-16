@@ -448,10 +448,10 @@ class SpriteWindow_DebugRoamers < Window_DrawableCommand
       self.shadowtext(_INTL("[Clear all current roamer locations]"), rect.x, rect.y, nameWidth, rect.height)
     else
       pkmn = Settings::ROAMING_SPECIES[index]
-      name = GameData::Species.get(pkmn[0]).name + " (Lv. #{pkmn[1]})"
+      name = GameData::Species.get(pkmn[:species]).name + " (Lv. #{pkmn[:level]})"
       status = ""
       statuscolor = 0
-      if pkmn[2] <= 0 || $game_switches[pkmn[2]]
+      if !pkmn[:game_switch] || pkmn[:game_switch] <= 0 || $game_switches[pkmn[:game_switch]]
         status = $PokemonGlobal.roamPokemon[index]
         if status == true
           if $PokemonGlobal.roamPokemonCaught[index]
@@ -472,7 +472,7 @@ class SpriteWindow_DebugRoamers < Window_DrawableCommand
           statuscolor = 2
         end
       else
-        status = "[NOT ROAMING][Switch #{pkmn[2]} is off]"
+        status = "[NOT ROAMING][Switch #{pkmn[:game_switch]} is off]"
       end
       self.shadowtext(name, rect.x, rect.y, nameWidth, rect.height)
       self.shadowtext(status, rect.x + nameWidth, rect.y, statusWidth, rect.height, 1, statuscolor)
@@ -500,7 +500,7 @@ def pbDebugRoamers
       pkmn = nil
     end
     if Input.trigger?(Input::ACTION) && cmdwindow.index < cmdwindow.roamerCount &&
-       (pkmn[2] <= 0 || $game_switches[pkmn[2]]) &&
+       (!pkmn[:game_switch] || pkmn[:game_switch] <= 0 || $game_switches[pkmn[:game_switch]]) &&
        $PokemonGlobal.roamPokemon[cmdwindow.index] != true
       # Roam selected Pokémon
       pbPlayDecisionSE
@@ -527,9 +527,9 @@ def pbDebugRoamers
       if cmdwindow.index < cmdwindow.roamerCount
         pbPlayDecisionSE
         # Toggle through roaming, not roaming, defeated
-        if pkmn[2] > 0 && !$game_switches[pkmn[2]]
+        if pkmn[:game_switch] && pkmn[:game_switch] > 0 && !$game_switches[pkmn[:game_switch]]
           # not roaming -> roaming
-          $game_switches[pkmn[2]] = true
+          $game_switches[pkmn[:game_switch]] = true
         elsif $PokemonGlobal.roamPokemon[cmdwindow.index] != true
           # roaming -> defeated
           $PokemonGlobal.roamPokemon[cmdwindow.index] = true
@@ -538,9 +538,9 @@ def pbDebugRoamers
               !$PokemonGlobal.roamPokemonCaught[cmdwindow.index]
           # defeated -> caught
           $PokemonGlobal.roamPokemonCaught[cmdwindow.index] = true
-        elsif pkmn[2] > 0
+        elsif pkmn[:game_switch] && pkmn[:game_switch] > 0
           # caught -> not roaming (or roaming if Switch ID is 0)
-          $game_switches[pkmn[2]] = false if pkmn[2] > 0
+          $game_switches[pkmn[:game_switch]] = false if pkmn[:game_switch] && pkmn[:game_switch] > 0
           $PokemonGlobal.roamPokemon[cmdwindow.index] = nil
           $PokemonGlobal.roamPokemonCaught[cmdwindow.index] = false
         end

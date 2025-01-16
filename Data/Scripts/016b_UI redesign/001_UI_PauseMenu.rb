@@ -256,9 +256,9 @@ MenuHandlers.add(:pause_menu, :town_map, {
   "effect"    => proc { |menu|
     pbPlayDecisionSE
     pbFadeOutIn do
-      scene = PokemonRegionMap_Scene.new(-1, false)
-      screen = PokemonRegionMapScreen.new(scene)
-      ret = screen.pbStartScreen
+      town_map_screen = UI::TownMap.new
+      town_map_screen.main
+      ret = town_map_screen.result
       $game_temp.fly_destination = ret if ret
       ($game_temp.fly_destination) ? menu.silent_end_screen : menu.refresh
     end

@@ -1604,7 +1604,7 @@ end
 #
 #===============================================================================
 class UI::PokemonStorage < UI::BaseScreen
-  attr_reader :storage, :mode
+  attr_reader :storage
 
   SCREEN_ID = :pokemon_storage_screen
 

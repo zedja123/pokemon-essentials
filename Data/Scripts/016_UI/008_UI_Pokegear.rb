@@ -164,11 +164,10 @@ MenuHandlers.add(:pokegear_menu, :map, {
   "order"     => 10,
   "effect"    => proc { |menu|
     pbFadeOutIn do
-      scene = PokemonRegionMap_Scene.new(-1, false)
-      screen = PokemonRegionMapScreen.new(scene)
-      ret = screen.pbStartScreen
-      if ret
-        $game_temp.fly_destination = ret
+      town_map_screen = UI::TownMap.new
+      town_map_screen.main
+      if town_map_screen.result
+        $game_temp.fly_destination = town_map_screen.result
         menu.dispose
         next 99999
       end

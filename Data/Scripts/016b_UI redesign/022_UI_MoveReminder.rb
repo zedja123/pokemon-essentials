@@ -263,7 +263,7 @@ end
 #
 #===============================================================================
 class UI::MoveReminder < UI::BaseScreen
-  attr_reader :pokemon, :mode
+  attr_reader :pokemon
 
   SCREEN_ID = :move_reminder_screen
 

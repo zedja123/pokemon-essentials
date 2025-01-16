@@ -186,30 +186,58 @@ module Settings
     66 => [5, 21, 28, 31, 39, 41, 44, 47,     69],
     69 => [5, 21, 28, 31, 39, 41, 44, 47, 66    ]
   }
-  # A set of arrays, each containing the details of a roaming Pokémon. The
-  # information within each array is as follows:
-  #   * Species.
-  #   * Level.
-  #   * Game Switch; the Pokémon roams while this is ON.
-  #   * Encounter type (see def pbRoamingMethodAllowed for their use):
-  #       0 = grass, walking in cave, surfing
-  #       1 = grass, walking in cave
-  #       2 = surfing
-  #       3 = fishing
-  #       4 = surfing, fishing
-  #   * Name of BGM to play for that encounter (optional).
-  #   * Roaming areas specifically for this Pokémon (optional; used instead of
-  #     ROAMING_AREAS).
+  # A set of hashes, each containing the details of a roaming Pokémon. The
+  # information within each hash is as follows:
+  #   * :species
+  #   * :level
+  #   * :icon - Filename in Graphics/UI/Town Map/ of the roamer's Town Map icon.
+  #   * :game_switch - The Pokémon roams if this is nil or <=0 or if that Game
+  #                    Switch is ON. Optional.
+  #   * :encounter_type - One of:
+  #       :all = grass, walking in cave, surfing (default)
+  #       :land = grass, walking in cave
+  #       :water = surfing, fishing
+  #       :surfing = surfing
+  #       :fishing = fishing
+  #   * :bgm - The BGM to play for the encounter. Optional.
+  #   * :areas - A hash of map IDs that determine where this Pokémon roams. Used
+  #              instead of ROAMING_AREAS above. Optional.
   ROAMING_SPECIES = [
-    [:LATIAS, 30, 53, 0, "Battle roaming"],
-    [:LATIOS, 30, 53, 0, "Battle roaming"],
-    [:KYOGRE, 40, 54, 2, nil, {
-      2  => [   21, 31    ],
-      21 => [2,     31, 69],
-      31 => [2, 21,     69],
-      69 => [   21, 31    ]
-    }],
-    [:ENTEI, 40, 55, 1]
+    {
+      :species        => :LATIAS,
+      :level          => 30,
+      :icon           => "pin_latias",
+      :game_switch    => 53,
+      :encounter_type => :all,
+      :bgm            => "Battle roaming"
+    },
+    {
+      :species        => :LATIOS,
+      :level          => 30,
+      :icon           => "pin_latios",
+      :game_switch    => 53,
+      :encounter_type => :all,
+      :bgm            => "Battle roaming"
+    },
+    {
+      :species        => :KYOGRE,
+      :level          => 40,
+      :game_switch    => 54,
+      :encounter_type => :surfing,
+      :areas          => {
+        2  => [   21, 31    ],
+        21 => [2,     31, 69],
+        31 => [2, 21,     69],
+        69 => [   21, 31    ]
+      }
+    },
+    {
+      :species        => :ENTEI,
+      :level          => 40,
+      :icon           => "pin_entei",
+      :game_switch    => 55,
+      :encounter_type => :land
+    }
   ]
 
   #-----------------------------------------------------------------------------

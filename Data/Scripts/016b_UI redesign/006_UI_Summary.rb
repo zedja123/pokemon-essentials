@@ -1372,7 +1372,7 @@ end
 #
 #===============================================================================
 class UI::PokemonSummary < UI::BaseScreen
-  attr_reader   :party, :mode
+  attr_reader   :party
   attr_accessor :party_index, :pokemon
 
   SCREEN_ID = :summary_screen

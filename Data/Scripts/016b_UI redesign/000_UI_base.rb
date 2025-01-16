@@ -307,6 +307,7 @@ module UI
   #=============================================================================
   class BaseVisuals
     attr_reader :sprites
+    attr_reader :mode
 
     BACKGROUND_FILENAME = "bg"
 
@@ -709,6 +710,7 @@ module UI
   #=============================================================================
   class BaseScreen
     attr_reader   :visuals
+    attr_reader   :mode
     attr_accessor :result
 
     def initialize

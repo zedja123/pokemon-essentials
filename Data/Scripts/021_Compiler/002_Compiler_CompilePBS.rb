@@ -207,9 +207,79 @@ module Compiler
   # Compile Town Map data.
   #-----------------------------------------------------------------------------
   def compile_town_map(*paths)
-    compile_PBS_file_generic(GameData::TownMap, *paths) do |final_validate, hash|
-      (final_validate) ? validate_all_compiled_town_maps : validate_compiled_town_map(hash)
+    GameData::TownMap::DATA.clear
+    schema = GameData::TownMap.schema
+    sub_schema = GameData::TownMap.sub_schema
+    idx = 0
+    # Read from PBS file(s)
+    paths.each do |path|
+      compile_pbs_file_message_start(path)
+      file_suffix = File.basename(path, ".txt")[GameData::TownMap::PBS_BASE_FILENAME.length + 1, path.length] || ""
+      data_hash = nil
+      current_point = nil
+      section_name = nil
+      section_line = nil
+      # Read each line of town_map.txt at a time and compile it as a town map property
+      pbCompilerEachPreppedLine(path) do |line, line_no|
+        echo "." if idx % 100 == 0
+        idx += 1
+        Graphics.update if idx % 500 == 0
+        FileLineData.setSection(section_name, nil, section_line)
+        if line[/^\s*\[\s*(.+)\s*\]\s*$/]
+          # New section [region_number]
+          section_name = $~[1]
+          section_line = line
+          if data_hash
+            validate_compiled_town_map(data_hash)
+            GameData::TownMap.register(data_hash)
+          end
+          FileLineData.setSection(section_name, nil, section_line)
+          # Construct data hash
+          data_hash = {
+            :pbs_file_suffix => file_suffix
+          }
+          data_hash[schema["SectionName"][0]] = get_csv_record(section_name.clone, schema["SectionName"])
+          data_hash[schema["Point"][0]] = []
+          current_point = nil
+        elsif line[/^\s*(\w+)\s*=\s*(.*)$/]
+          # XXX=YYY lines
+          if !data_hash
+            raise _INTL("Expected a section at the beginning of the file.") + "\n" + FileLineData.linereport
+          end
+          key = $~[1]
+          if schema[key]   # Property of the town map
+            property_value = get_csv_record($~[2], schema[key])
+            if key == "Point"
+              current_point = {
+                :position  => [property_value[0], property_value[1]],
+                :real_name => property_value[2]
+              }
+              current_point[:real_description] = property_value[3] if property_value[3]
+              current_point[:fly_spot] = [property_value[4], property_value[5], property_value[6]] if property_value[4]
+              current_point[:switch] = property_value[7] if property_value[7]
+              data_hash[schema[key][0]].push(current_point)
+            else
+              data_hash[schema[key][0]] = property_value
+            end
+          elsif sub_schema[key]   # Property of a point
+            if !current_point
+              raise _INTL("Property \"{1}\" is point-specific, but a point hasn't been defined yet.", key) + "\n" + FileLineData.linereport
+            end
+            current_point[sub_schema[key][0]] = get_csv_record($~[2], sub_schema[key])
+          end
+        end
+      end
+      # Add last town map's data to records
+      if data_hash
+        FileLineData.setSection(section_name, nil, section_line)
+        validate_compiled_town_map(data_hash)
+        GameData::TownMap.register(data_hash)
+      end
+      process_pbs_file_message_end
     end
+    validate_all_compiled_town_maps
+    # Save all data
+    GameData::TownMap.save
   end
 
   def validate_compiled_town_map(hash)
@@ -219,19 +289,19 @@ module Compiler
     # Get town map names and descriptions for translating
     region_names = []
     point_names = []
-    interest_names = []
+    point_descriptions = []
     GameData::TownMap.each do |town_map|
       region_names[town_map.id] = town_map.real_name
-      town_map.point.each do |point|
-        point_names.push(point[2])
-        interest_names.push(point[3])
+      town_map.points.each do |point|
+        point_names.push(point[:real_name])
+        point_descriptions.push(point[:real_description])
       end
     end
     point_names.uniq!
-    interest_names.uniq!
+    point_descriptions.uniq!
     MessageTypes.setMessagesAsHash(MessageTypes::REGION_NAMES, region_names)
     MessageTypes.setMessagesAsHash(MessageTypes::REGION_LOCATION_NAMES, point_names)
-    MessageTypes.setMessagesAsHash(MessageTypes::REGION_LOCATION_DESCRIPTIONS, interest_names)
+    MessageTypes.setMessagesAsHash(MessageTypes::REGION_LOCATION_DESCRIPTIONS, point_descriptions)
   end
 
   #-----------------------------------------------------------------------------

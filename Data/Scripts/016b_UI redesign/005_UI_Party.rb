@@ -738,7 +738,7 @@ end
 #
 #===============================================================================
 class UI::Party < UI::BaseScreen
-  attr_reader :party, :mode
+  attr_reader :party
 
   SCREEN_ID = :party_screen
 
@@ -930,13 +930,12 @@ class UI::Party < UI::BaseScreen
       if pbCanUseHiddenMove?(pkmn, move_id) && pbConfirmUseHiddenMove(pkmn, move_id)
         if move_id == :FLY
           pbFadeOutInWithUpdate(sprites) do
-            town_map_scene = PokemonRegionMap_Scene.new(-1, false)
-            town_map_screen = PokemonRegionMapScreen.new(town_map_scene)
-            ret = town_map_screen.pbStartFlyScreen
-            if ret
+            town_map_screen = UI::TownMap.new(mode: :fly)
+            town_map_screen.main
+            if town_map_screen.result
               $game_temp.field_move_to_use = move_id
               $game_temp.field_move_user = pkmn
-              $game_temp.fly_destination = ret
+              $game_temp.fly_destination = town_map_screen.result
               silent_end_screen
             end
           end

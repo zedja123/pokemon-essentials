@@ -44,6 +44,13 @@ module Settings
   # by the Pokémon that knows it.
   SHOW_MODIFIED_MOVE_PROPERTIES = false
 
+  # Whether pressing Use in the Town Map will zoom it in to 200% and show a text
+  # pane on the right showing the selected point's description. The cursor can
+  # still be moved while zoomed in.
+  ENABLE_TOWN_MAP_ZOOM_IN_FOR_DETAILS = true
+  # Whether points in the Town Map can be marked.
+  ENABLE_TOWN_MAP_MARKING = true
+
   # TODO: Allow renaming a Pokémon from the party screen/summary screen (not
   #       sure which). Gen 9 feature.
   # TODO: Allow forgetting/remembering moves from the summary screen. Gen 9

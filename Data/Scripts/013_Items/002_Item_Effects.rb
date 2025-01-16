@@ -313,11 +313,10 @@ ItemHandlers::UseInField.copy(:ITEMFINDER, :DOWSINGMCHN, :DOWSINGMACHINE)
 
 ItemHandlers::UseFromBag.add(:TOWNMAP, proc { |item, bag_screen|
   pbFadeOutInWithUpdate(bag_screen&.sprites) do
-    scene = PokemonRegionMap_Scene.new(-1, false)
-    screen = PokemonRegionMapScreen.new(scene)
-    ret = screen.pbStartScreen
-    if ret
-      $game_temp.fly_destination = ret
+    town_map_screen = UI::TownMap.new
+    town_map_screen.main
+    if town_map_screen.result
+      $game_temp.fly_destination = town_map_screen.result
       bag_screen&.silent_end_screen
     end
   end

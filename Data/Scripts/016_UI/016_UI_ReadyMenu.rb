@@ -263,9 +263,9 @@ class PokemonReadyMenu
           ret = nil
           pbFadeOutInWithUpdate(@scene.sprites) do
             pbHideMenu
-            scene = PokemonRegionMap_Scene.new(-1, false)
-            screen = PokemonRegionMapScreen.new(scene)
-            ret = screen.pbStartFlyScreen
+            town_map_screen = UI::TownMap.new(mode: :fly)
+            town_map_screen.main
+            ret = town_map_screen.result
             pbShowMenu if !ret
           end
           if ret
