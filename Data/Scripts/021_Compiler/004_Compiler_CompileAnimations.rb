@@ -1,6 +1,71 @@
+#===============================================================================
+#
+#===============================================================================
 module Compiler
+  @@categories[:animations] = {
+    :should_compile => proc { |compiling| next should_compile_animations? },
+    :header_text    => proc { next _INTL("Compiling animations") },
+    :skipped_text   => proc { next _INTL("Not compiled") },
+    :compile        => proc { compile_animations }
+  }
+
+  @@categories[:animations] = {
+    :should_compile => proc { |compiling| next should_compile_animations? },
+    :header_text    => proc { next _INTL("Compiling animations") },
+    :skipped_text   => proc { next _INTL("Not compiled") },
+    :compile        => proc {
+      # Delete old data files in preparation for recompiling
+      begin
+        File.delete("Data/animations.dat") if FileTest.exist?("Data/animations.dat")
+      rescue SystemCallError
+      end
+      text_files = get_animation_pbs_files_to_compile
+      compile_battle_animations(*text_files)
+    }
+  }
+
   module_function
 
+  def get_animation_pbs_files_to_compile
+    ret = []
+    if FileTest.directory?("PBS/Animations")
+      Dir.all("PBS/Animations", "**/**.txt").each { |file| ret.push(file) }
+    end
+    return ret
+  end
+
+  def should_compile_animations?
+    # Get all data files and PBS files to be checked for their last modified times
+    data_file = "animations.dat"
+    text_files = get_animation_pbs_files_to_compile
+    # Check data files for their latest modify time
+    latest_data_write_time = 0
+    if FileTest.exist?("Data/" + data_file)
+      begin
+        File.open("Data/#{data_file}") do |file|
+          latest_data_write_time = [latest_data_write_time, file.mtime.to_i].max
+        end
+      rescue SystemCallError
+        return true
+      end
+    else
+      return true
+    end
+    # Check PBS files for their latest modify time
+    latest_text_edit_time = 0
+    text_files.each do |filepath|
+      begin
+        File.open(filepath) { |file| latest_text_edit_time = [latest_text_edit_time, file.mtime.to_i].max }
+      rescue SystemCallError
+      end
+    end
+    # Decide to compile if a PBS file was edited more recently than any .dat files
+    return (latest_text_edit_time >= latest_data_write_time)
+  end
+
+  #-----------------------------------------------------------------------------
+  # Compile battle animations.
+  #-----------------------------------------------------------------------------
   def compile_battle_animations(*paths)
     GameData::Animation::DATA.clear
     schema = GameData::Animation.schema
@@ -125,7 +190,7 @@ module Compiler
         particle.keys.each do |property|
           next if [:name, :se, :user_cry, :target_cry].include?(property)
           raise _INTL("Particle \"{1}\" has a command that isn't a \"Play\"-type command.",
-             particle[:name]) + "\n" + FileLineData.linereport
+            particle[:name]) + "\n" + FileLineData.linereport
         end
       else
         if particle[:se]
@@ -206,17 +271,17 @@ module Compiler
       # Ensure that only particles that have an entity as a focus can have a
       # smart angle
       if (particle[:angle_override] || :none) != :none &&
-         !GameData::Animation::FOCUS_TYPES_WITH_USER.include?(particle[:focus]) &&
-         !GameData::Animation::FOCUS_TYPES_WITH_TARGET.include?(particle[:focus])
+        !GameData::Animation::FOCUS_TYPES_WITH_USER.include?(particle[:focus]) &&
+        !GameData::Animation::FOCUS_TYPES_WITH_TARGET.include?(particle[:focus])
         raise _INTL("Particle \"{1}\" can't set \"AngleOverride\" if its focus isn't a specific thing(s).",
                     particle[:name]) + "\n" + FileLineData.linereport
       end
       # Ensure that a particle with a user's/target's graphic doesn't have any
       # :frame commands
       if !["User", "Target", "SE"].include?(particle[:name]) &&
-         ["USER", "USER_OPP", "USER_FRONT", "USER_BACK",
+        ["USER", "USER_OPP", "USER_FRONT", "USER_BACK",
           "TARGET", "TARGET_OPP", "TARGET_FRONT", "TARGET_BACK"].include?(particle[:graphic]) &&
-         particle[:frame] && !particle[:frame].empty?
+        particle[:frame] && !particle[:frame].empty?
         raise _INTL("Particle \"{1}\" can't have any \"Frame\" commands if its graphic is a Pokémon's sprite.",
                     particle[:name]) + "\n" + FileLineData.linereport
       end
@@ -286,88 +351,4 @@ module Compiler
   end
 
   def validate_all_compiled_animations; end
-end
-
-#===============================================================================
-# Hook into the regular Compiler to also compile animation PBS files.
-# This is a separate Compiler that runs after the regular one.
-#===============================================================================
-module Compiler
-  module_function
-
-  def get_animation_pbs_files_to_compile
-    ret = []
-    if FileTest.directory?("PBS/Animations")
-      Dir.all("PBS/Animations", "**/**.txt").each { |file| ret.push(file) }
-    end
-    return ret
-  end
-
-  class << self
-    if !method_defined?(:__new_anims_main)
-      alias_method :__new_anims_main, :main
-    end
-  end
-
-  def main
-    __new_anims_main
-    return if !$DEBUG
-    begin
-      Console.echo_h1(_INTL("Checking new animations data"))
-      must_compile = false
-      data_file = "animations.dat"
-      text_files = get_animation_pbs_files_to_compile
-      latest_data_time = 0
-      latest_text_time = 0
-      # Check data file for its latest modify time
-      if FileTest.exist?("Data/" + data_file)
-        begin
-          File.open("Data/#{data_file}") do |file|
-            latest_data_time = [latest_data_time, file.mtime.to_i].max
-          end
-        rescue SystemCallError
-          must_compile = true
-        end
-      else
-        must_compile = true if text_files.length > 0
-      end
-      # Check PBS files for their latest modify time
-      text_files.each do |filepath|
-        begin
-          File.open(filepath) do |file|
-            latest_text_time = [latest_text_time, file.mtime.to_i].max
-          end
-        rescue SystemCallError
-        end
-      end
-      # Decide to compile if a PBS file was edited more recently than the .dat file
-      must_compile |= (latest_text_time >= latest_data_time)
-      # Should recompile if holding Ctrl
-      Input.update
-      must_compile = true if $full_compile || Input.press?(Input::CTRL)
-      # Delete old data file in preparation for recompiling
-      if must_compile
-        begin
-          File.delete("Data/#{data_file}") if FileTest.exist?("Data/#{data_file}")
-        rescue SystemCallError
-        end
-        # Recompile all data
-        compile_battle_animations(*text_files)
-      else
-        Console.echoln_li(_INTL("New animations data were not compiled"))
-      end
-      echoln ""
-    rescue Exception
-      e = $!
-      raise e if e.class.to_s == "Reset" || e.is_a?(Reset) || e.is_a?(SystemExit)
-      pbPrintException(e)
-      begin
-        File.delete("Data/#{data_file}") if FileTest.exist?("Data/#{data_file}")
-      rescue SystemCallError
-      end
-      raise Reset.new if e.is_a?(Hangup)
-      raise SystemExit.new if e.is_a?(RuntimeError)
-      raise "Unknown exception when compiling animations."
-    end
-  end
 end

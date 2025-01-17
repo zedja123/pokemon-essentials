@@ -90,35 +90,14 @@ module Compiler
 end
 
 #===============================================================================
-# Hook into the regular Compiler to also write all animation PBS files.
-#===============================================================================
-module Compiler
-  module_function
-
-  class << self
-    if !method_defined?(:__new_anims__write_all)
-      alias_method :__new_anims__write_all, :write_all
-    end
-  end
-
-  def write_all
-    __new_anims__write_all
-    Console.echo_h1(_INTL("Writing all animation PBS files"))
-    write_all_battle_animations
-    echoln ""
-    Console.echo_h2(_INTL("Successfully rewrote all animation PBS files"), text: :green)
-  end
-end
-
-#===============================================================================
 # Debug menu function for writing all animation PBS files. Shouldn't need to be
 # used, but it's here if you want it.
 #===============================================================================
-MenuHandlers.add(:debug_menu, :create_animation_pbs_files, {
-  "name"        => _INTL("Write all animation PBS files"),
-  "parent"      => :files_menu,
-  "description" => _INTL("Write all animation PBS files."),
-  "effect"      => proc {
-    Compiler.write_all_battle_animations
-  }
-})
+# MenuHandlers.add(:debug_menu, :create_animation_pbs_files, {
+#   "name"        => _INTL("Write all animation PBS files"),
+#   "parent"      => :files_menu,
+#   "description" => _INTL("Write all animation PBS files."),
+#   "effect"      => proc {
+#     Compiler.write_all_battle_animations
+#   }
+# })

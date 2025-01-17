@@ -1277,8 +1277,23 @@ MenuHandlers.add(:debug_menu, :editors_menu, {
   "description" => _INTL("Edit battle animations, terrain tags, map data, etc.")
 })
 
+MenuHandlers.add(:debug_menu, :use_pc, {
+  "name"        => _INTL("New battle animation editor"),
+  "parent"      => :editors_menu,
+  "description" => _INTL("Edit the battle animations."),
+  "effect"      => proc {
+    Graphics.resize_screen(AnimationEditor::WINDOW_WIDTH, AnimationEditor::WINDOW_HEIGHT)
+    pbSetResizeFactor(1)
+    screen = AnimationEditor::AnimationSelector.new
+    screen.run
+    Graphics.resize_screen(Settings::SCREEN_WIDTH, Settings::SCREEN_HEIGHT)
+    pbSetResizeFactor($PokemonSystem.screensize)
+    $game_map&.autoplay
+  }
+})
+
 MenuHandlers.add(:debug_menu, :animation_editor, {
-  "name"        => _INTL("Battle animation editor"),
+  "name"        => _INTL("Old battle animation editor"),
   "parent"      => :editors_menu,
   "description" => _INTL("Edit the battle animations."),
   "effect"      => proc {
@@ -1287,9 +1302,9 @@ MenuHandlers.add(:debug_menu, :animation_editor, {
 })
 
 MenuHandlers.add(:debug_menu, :animation_organiser, {
-  "name"        => _INTL("Battle animation organiser"),
+  "name"        => _INTL("Old battle animation organiser"),
   "parent"      => :editors_menu,
-  "description" => _INTL("Rearrange/add/delete battle animations."),
+  "description" => _INTL("Rearrange/add/delete old battle animations."),
   "effect"      => proc {
     pbFadeOutIn { pbAnimationsOrganiser }
   }

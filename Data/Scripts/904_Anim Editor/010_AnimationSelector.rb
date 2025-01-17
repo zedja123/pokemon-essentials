@@ -425,21 +425,3 @@ class AnimationEditor::AnimationSelector
     dispose
   end
 end
-
-#===============================================================================
-# Add to Debug menu.
-#===============================================================================
-MenuHandlers.add(:debug_menu, :use_pc, {
-  "name"        => _INTL("New Animation Editor"),
-  "parent"      => :main,
-  "description" => _INTL("Open the new animation editor."),
-  "effect"      => proc {
-    Graphics.resize_screen(AnimationEditor::WINDOW_WIDTH, AnimationEditor::WINDOW_HEIGHT)
-    pbSetResizeFactor(1)
-    screen = AnimationEditor::AnimationSelector.new
-    screen.run
-    Graphics.resize_screen(Settings::SCREEN_WIDTH, Settings::SCREEN_HEIGHT)
-    pbSetResizeFactor($PokemonSystem.screensize)
-    $game_map&.autoplay
-  }
-})

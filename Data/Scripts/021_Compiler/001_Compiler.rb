@@ -485,60 +485,38 @@ module Compiler
           enumer = schema[2 + i - start]
           case enumer
           when Array
-            file.write((value.is_a?(Integer) && !enumer[value].nil?) ? enumer[value] : value)
+            file.write(enumer[value])
           when Symbol, String
-            if GameData.const_defined?(enumer.to_sym)
-              mod = GameData.const_get(enumer.to_sym)
-              file.write(mod.get(value).id.to_s)
-            else
-              mod = Object.const_get(enumer.to_sym)
-              file.write(getConstantName(mod, value))
-            end
+            mod = Object.const_get(enumer.to_sym)
+            file.write(getConstantName(mod, value))
           when Module
             file.write(getConstantName(enumer, value))
           when Hash
-            if value.is_a?(String)
-              file.write(value)
-            else
-              enumer.each_key do |key|
-                next if enumer[key] != value
-                file.write(key)
-                break
-              end
+            enumer.each_key do |key|
+              next if enumer[key] != value
+              file.write(key)
+              break
             end
           end
         when "y", "Y"   # Enumerable or integer
           enumer = schema[2 + i - start]
           case enumer
           when Array
-            file.write((value.is_a?(Integer) && !enumer[value].nil?) ? enumer[value] : value)
+            file.write((enumer[value].nil?) ? value : enumer[value])
           when Symbol, String
-            if !Kernel.const_defined?(enumer.to_sym) && GameData.const_defined?(enumer.to_sym)
-              mod = GameData.const_get(enumer.to_sym)
-              if mod.exists?(value)
-                file.write(mod.get(value).id.to_s)
-              else
-                file.write(value.to_s)
-              end
-            else
-              mod = Object.const_get(enumer.to_sym)
-              file.write(getConstantNameOrValue(mod, value))
-            end
+            mod = Object.const_get(enumer.to_sym)
+            file.write(getConstantNameOrValue(mod, value))
           when Module
             file.write(getConstantNameOrValue(enumer, value))
           when Hash
-            if value.is_a?(String)
-              file.write(value)
-            else
-              has_enum = false
-              enumer.each_key do |key|
-                next if enumer[key] != value
-                file.write(key)
-                has_enum = true
-                break
-              end
-              file.write(value) if !has_enum
+            has_enum = false
+            enumer.each_key do |key|
+              next if enumer[key] != value
+              file.write(key)
+              has_enum = true
+              break
             end
+            file.write(value) if !has_enum
           end
         else
           if value.is_a?(String)
