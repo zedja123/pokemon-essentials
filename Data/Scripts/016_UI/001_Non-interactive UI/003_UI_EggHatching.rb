@@ -10,6 +10,8 @@
 # Graphics/Battlers/eggCracks.
 #===============================================================================
 class PokemonEggHatch_Scene
+  EGG_HATCH_BGM = "Evolution"
+
   def pbStartScene(pokemon)
     @sprites = {}
     @pokemon = pokemon
@@ -50,7 +52,7 @@ class PokemonEggHatch_Scene
   end
 
   def pbMain
-    pbBGMPlay("Evolution")
+    pbBGMPlay(EGG_HATCH_BGM)
     # Egg animation
     updateScene(1.5)
     pbPositionHatchMask(0)

@@ -77,7 +77,6 @@ class Game_Character
     @always_on_top             = false
     @anime_count               = 0   # Time since pattern was last changed
     @stop_count                = 0   # Time since character last finished moving
-    @bumping                   = false   # Used by the player only when walking into something
     @jump_peak                 = 0   # Max height while jumping
     @jump_distance             = 0   # Total distance of jump
     @jump_fraction             = 0   # How far through a jump we currently are (0-1)
@@ -996,7 +995,6 @@ class Game_Character
     if moving? && @move_timer >= @move_time &&
        @real_x == @x * Game_Map::REAL_RES_X && @real_y == @y * Game_Map::REAL_RES_Y
       @move_timer = nil
-      @bumping = false
     end
     # End of jump
     if jumping? && @jump_fraction >= 1

@@ -36,7 +36,7 @@ class PokemonGlobalMetadata
   attr_accessor :eventvars
   # Affecting the map
   attr_accessor :bridge
-  attr_accessor :repel
+  attr_accessor :repel, :repel_item
   attr_accessor :flashUsed
   attr_reader   :encounter_version
   # Map transfers

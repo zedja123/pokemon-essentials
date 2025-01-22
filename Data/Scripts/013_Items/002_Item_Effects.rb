@@ -32,6 +32,7 @@ def pbRepel(item, steps)
   $stats.repel_count += 1
   pbUseItemMessage(item)
   $PokemonGlobal.repel = steps
+  $PokemonGlobal.repel_item = item
   return true
 end
 
@@ -58,17 +59,29 @@ EventHandlers.add(:on_player_step_taken, :repel_counter,
       pbMessage(_INTL("The repellent's effect wore off!"))
       next
     end
-    next if !pbConfirmMessage(_INTL("The repellent's effect wore off! Would you like to use another one?"))
-    ret = nil
-    pbFadeOutIn do
-      bag_screen = UI::Bag.new($bag, mode: :choose_item)
-      bag_screen.set_filter_proc(proc { |item| repels.include?(item) })
-      ret = bag_screen.choose_item
+    commands = {}
+    if $PokemonGlobal.repel_item && $bag.has?($PokemonGlobal.repel_item)
+      commands[:repeat] = _INTL("Use {1}", GameData::Item.get($PokemonGlobal.repel_item).name)
+    end
+    commands[:choose_another] = _INTL("Use another repellent")
+    commands[:cancel] = _INTL("Cancel")
+    cmd = pbMessage(_INTL("The repellent's effect wore off! Would you like to use another one?"), commands.values, -1)
+    next if cmd < 0
+    new_item = nil
+    case commands.keys[cmd]
+    when :repeat
+      new_item = $PokemonGlobal.repel_item
+    when :choose_another
+      pbFadeOutIn do
+        bag_screen = UI::Bag.new($bag, mode: :choose_item)
+        bag_screen.set_filter_proc(proc { |item| repels.include?(item) })
+        new_item = bag_screen.choose_item
+      end
     end
     # TODO: Would be nice if this didn't call pbUseItem, so that pbUseItem would
     #       be exclusively called from the Bag screen and could rely on that
     #       screen existing.
-    pbUseItem($bag, ret) if ret
+    pbUseItem($bag, new_item) if new_item
   }
 )
 

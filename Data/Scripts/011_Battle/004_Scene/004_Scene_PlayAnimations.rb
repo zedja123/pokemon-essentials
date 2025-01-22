@@ -448,7 +448,7 @@ class Battle::Scene
       return nil if ANIMATION_DEFAULTS.include?(wanted_move)   # No need to check for these animations twice
     end
     # Use Tackle or Defense Curl's animation
-    if target_data.num_targets == 0 && target.data.id != :None
+    if target_data.num_targets == 0 && target_data.id != :None
       return find_move_animation_for_move(ANIMATION_DEFAULTS[1], 0, user_index)
     end
     return find_move_animation_for_move(ANIMATION_DEFAULTS[0], 0, user_index)
@@ -593,7 +593,7 @@ class Battle::Scene
   def pbCommonAnimation(anim_name, user = nil, target = nil)
     return if nil_or_empty?(anim_name)
     # Find an animation to play (new format or old format)
-    anims = try_get_better_common_animation(anim_name, user.index)
+    anims = try_get_better_common_animation(anim_name, user&.index)
     return if !anims
     # Play a new format animation
     if anims.is_a?(Array)
