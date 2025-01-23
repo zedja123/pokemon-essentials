@@ -9,8 +9,7 @@ class UI::PartyVisualsPanel < UI::SpriteContainer
   attr_reader :pokemon, :text
 
   GRAPHICS_FOLDER = "Party/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(248, 248, 248), Color.new(40, 40, 40)],   # Base and shadow colour
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
     :male    => [Color.new(0, 112, 248), Color.new(120, 184, 232)],
     :female  => [Color.new(232, 32, 16), Color.new(248, 168, 184)]
   }
@@ -198,7 +197,7 @@ class UI::PartyVisualsPanel < UI::SpriteContainer
     pokemon_name = @pokemon.name
     pokemon_name = crop_text(pokemon_name, 144)
     name_width = @sprites[:overlay].bitmap.text_size(pokemon_name).width
-    draw_text(pokemon_name, 94 - [name_width - 130, 0].max, 22)
+    draw_text(pokemon_name, 94 - [name_width - 130, 0].max, 22, theme: :white)
   end
 
   def draw_level
@@ -221,6 +220,7 @@ class UI::PartyVisualsPanel < UI::SpriteContainer
     bar_x = 136
     bar_y = 52
     bar_total_width = 96
+    bar_height = 8
     bar_width = [@pokemon.hp * bar_total_width / @pokemon.totalhp.to_f, 1.0].max
     bar_width = ((bar_width / 2).round) * 2   # Make the bar's length a multiple of 2 pixels
     bar_width -= 2 if bar_width == bar_total_width && @pokemon.hp < @pokemon.totalhp
@@ -228,7 +228,7 @@ class UI::PartyVisualsPanel < UI::SpriteContainer
     hp_zone = 1 if @pokemon.hp <= (@pokemon.totalhp / 2).floor   # Yellow
     hp_zone = 2 if @pokemon.hp <= (@pokemon.totalhp / 4).floor   # Red
     draw_image(graphics_folder + "hp_bar_fill", bar_x, bar_y,
-               0, hp_zone * 8, bar_width, 8)
+               0, hp_zone * bar_height, bar_width, bar_height)
   end
 
   def draw_hp_numbers
@@ -259,7 +259,7 @@ class UI::PartyVisualsPanel < UI::SpriteContainer
   end
 
   def draw_annotation
-    draw_text(@text, 94, 62) if @text && @text.length > 0
+    draw_text(@text, 94, 62, theme: :white) if @text && @text.length > 0
   end
 end
 
@@ -268,9 +268,6 @@ end
 #===============================================================================
 class UI::PartyVisualsButton < UI::SpriteContainer
   GRAPHICS_FOLDER = "Party/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(248, 248, 248), Color.new(40, 40, 40)]   # Base and shadow colour
-  }
 
   def initialize(text, x, y, narrow, viewport)
     @text = text
@@ -319,7 +316,7 @@ class UI::PartyVisualsButton < UI::SpriteContainer
 
   def refresh_overlay
     super
-    draw_text(@text, @sprites[:overlay].width / 2, (@narrow) ? 8 : 14, align: :center)
+    draw_text(@text, @sprites[:overlay].width / 2, (@narrow) ? 8 : 14, align: :center, theme: :white)
   end
 end
 
@@ -328,7 +325,6 @@ end
 #===============================================================================
 class UI::PartyVisuals < UI::BaseVisuals
   attr_reader :index
-  attr_reader :sub_mode
 
   GRAPHICS_FOLDER = "Party/"   # Subfolder in Graphics/UI
 
@@ -430,10 +426,6 @@ class UI::PartyVisuals < UI::BaseVisuals
     num_sprites.times do |i|
       @sprites["pokemon#{i}"].selected = (i == @index)
     end
-  end
-
-  def set_sub_mode(sub_mode = :normal)
-    @sub_mode = sub_mode
   end
 
   #-----------------------------------------------------------------------------
@@ -660,6 +652,7 @@ class UI::PartyVisuals < UI::BaseVisuals
         return :switch_pokemon_start
       elsif @sub_mode == :switch_items
         return :item_move if @party[@index].hasItem?
+        return nil
       end
       pbPlayDecisionSE
       return :interact_menu
@@ -670,7 +663,7 @@ class UI::PartyVisuals < UI::BaseVisuals
       end
     when Input::BACK
       return :switch_pokemon_cancel if switching?
-      return :clear_sub_mode if (@sub_mode || :normal) != :normal
+      return :clear_sub_mode if (@sub_mode || :none) != :none
       pbPlayCloseMenuSE
       return :quit
     end
@@ -798,10 +791,6 @@ class UI::Party < UI::BaseScreen
 
   def clear_annotations
     @visuals.set_annotations(nil)
-  end
-
-  def set_sub_mode(sub_mode = :normal)
-    @visuals.set_sub_mode(sub_mode)
   end
 
   #-----------------------------------------------------------------------------
@@ -1290,7 +1279,7 @@ UIActionHandlers.add(UI::Party::SCREEN_ID, :mail_take, {
 UIActionHandlers.add(UI::Party::SCREEN_ID, :clear_sub_mode, {
   :effect => proc { |screen|
     pbPlayCancelSE
-    screen.set_sub_mode(:normal)
+    screen.set_sub_mode
   }
 })
 

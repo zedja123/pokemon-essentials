@@ -49,11 +49,8 @@ class UI::LoadPanel < UI::SpriteContainer
   attr_writer :label
 
   GRAPHICS_FOLDER = "Load/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(88, 88, 80), Color.new(168, 184, 184)]   # Base and shadow colour
-  }
-  PANEL_WIDTH  = 392
-  PANEL_HEIGHT = 56
+  PANEL_WIDTH     = 392
+  PANEL_HEIGHT    = 56
 
   def initialize(label, viewport)
     @label    = label
@@ -111,7 +108,7 @@ class UI::LoadPanel < UI::SpriteContainer
 
   def refresh
     super
-    draw_text(@label, 18, 18)
+    draw_text(@label, 18, 18, theme: :gray)
   end
 end
 
@@ -122,8 +119,7 @@ class UI::LoadContinuePanel < UI::LoadPanel
   attr_reader :sprites
 
   GRAPHICS_FOLDER = "Load/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(88, 88, 80), Color.new(168, 184, 184)],   # Base and shadow colour
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
     :male    => [Color.new(0, 112, 248), Color.new(120, 184, 232)],
     :female  => [Color.new(232, 32, 16), Color.new(248, 168, 184)]
   }
@@ -249,7 +245,7 @@ class UI::LoadContinuePanel < UI::LoadPanel
 
   def draw_slot_number
     return if @total_slots <= 1
-    draw_text(sprintf("%d/%d", @slot_index + 1, @total_slots), PANEL_WIDTH - 18, 18, align: :right)
+    draw_text(sprintf("%d/%d", @slot_index + 1, @total_slots), PANEL_WIDTH - 18, 18, align: :right, theme: :gray)
   end
 
   def draw_save_file_text
@@ -268,13 +264,13 @@ class UI::LoadContinuePanel < UI::LoadPanel
     map_name = map_name.gsub(/\\v\[(\d+)\]/) { |num| @save_data[:variables][$~[1].to_i].to_s }
     draw_text(map_name, 18, 114, theme: gender_theme)
     # Gym Badges
-    draw_text(_INTL("Badges:"), 18, 146)
+    draw_text(_INTL("Badges:"), 18, 146, theme: :gray)
     draw_text(@save_data[:player].badge_count.to_s, 156, 146, theme: gender_theme)
     # Pokédex owned count
-    draw_text(_INTL("Pokédex:"), 18, 178)
+    draw_text(_INTL("Pokédex:"), 18, 178, theme: :gray)
     draw_text(@save_data[:player].pokedex.seen_count.to_s, 156, 178, theme: gender_theme)
     # Time played
-    draw_text(_INTL("Time played:"), 18, 210)
+    draw_text(_INTL("Time played:"), 18, 210, theme: :gray)
     play_time = @save_data[:stats]&.play_time.to_i || 0
     hour = (play_time / 60) / 60
     min  = (play_time / 60) % 60

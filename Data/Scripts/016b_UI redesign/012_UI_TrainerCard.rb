@@ -8,6 +8,9 @@ class UI::TrainerCardVisuals < UI::BaseVisuals
   FIRST_BADGE_X   = 72         # Left edge of the first Gym Badge
   FIRST_BADGE_Y   = 310        # Top edge of the first Gym Badge
   BADGE_COUNT     = 8          # Number of Gym Badges to show
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
+    :gray => [Color.new(72, 72, 72), Color.new(160, 160, 160)]
+  }
 
   def initialize_sprites
     # Trainer card
@@ -34,10 +37,10 @@ class UI::TrainerCardVisuals < UI::BaseVisuals
 
   # Draws the player's name and ID number onto the overlay.
   def draw_ID
-    draw_text(_INTL("Name"), 34, 70)
-    draw_text($player.name, 302, 70, align: :right)
-    draw_text(_INTL("ID No."), 332, 70)
-    draw_text(sprintf("%05d", $player.public_ID), 468, 70, align: :right)
+    draw_text(_INTL("Name"), 34, 70, theme: :gray)
+    draw_text($player.name, 302, 70, align: :right, theme: :gray)
+    draw_text(_INTL("ID No."), 332, 70, theme: :gray)
+    draw_text(sprintf("%05d", $player.public_ID), 468, 70, align: :right, theme: :gray)
   end
 
   # Draws the player's money, Pokédex numbers, play time and start date onto the
@@ -66,14 +69,14 @@ class UI::TrainerCardVisuals < UI::BaseVisuals
                               $PokemonGlobal.startTime.year)
     end
     # Draw text
-    draw_text(_INTL("Money"), 34, 118)
-    draw_text(money_text, 302, 118, align: :right)
-    draw_text(_INTL("Pokédex"), 34, 166)
-    draw_text(pokedex_text, 302, 166, align: :right)
-    draw_text(_INTL("Time"), 34, 214)
-    draw_text(play_time_text, 302, 214, align: :right)
-    draw_text(_INTL("Started"), 34, 262)
-    draw_text(start_date_text, 302, 262, align: :right)
+    draw_text(_INTL("Money"), 34, 118, theme: :gray)
+    draw_text(money_text, 302, 118, align: :right, theme: :gray)
+    draw_text(_INTL("Pokédex"), 34, 166, theme: :gray)
+    draw_text(pokedex_text, 302, 166, align: :right, theme: :gray)
+    draw_text(_INTL("Time"), 34, 214, theme: :gray)
+    draw_text(play_time_text, 302, 214, align: :right, theme: :gray)
+    draw_text(_INTL("Started"), 34, 262, theme: :gray)
+    draw_text(start_date_text, 302, 262, align: :right, theme: :gray)
   end
 
   # Draws the player's owned Gym Badges onto the overlay.

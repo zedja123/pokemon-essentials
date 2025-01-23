@@ -53,12 +53,6 @@ class UI::MoveReminderVisuals < UI::BaseVisuals
   attr_reader :index
 
   GRAPHICS_FOLDER   = "Move Reminder/"   # Subfolder in Graphics/UI
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(248, 248, 248), Color.new(0, 0, 0)],   # Base and shadow colour
-    :white   => [Color.new(248, 248, 248), Color.new(0, 0, 0)],
-    :black   => [Color.new(64, 64, 64), Color.new(176, 176, 176)],
-    :header  => [Color.new(88, 88, 80), Color.new(168, 184, 184)]
-  }
   MOVE_LIST_X       = 0
   MOVE_LIST_Y       = 84
   MOVE_LIST_SPACING = 64    # Y distance between top of two adjacent move areas
@@ -111,7 +105,7 @@ class UI::MoveReminderVisuals < UI::BaseVisuals
   end
 
   def draw_header
-    draw_text(_INTL("Teach which move?"), 16, 14, theme: :header)
+    draw_text(_INTL("Teach which move?"), 16, 14, theme: :gray)
   end
 
   # x and y are the top left corner of the type icon if there is only one type.
@@ -139,7 +133,7 @@ class UI::MoveReminderVisuals < UI::BaseVisuals
     # Draw move name
     move_name = move_data.name
     move_name = crop_text(move_name, 230)
-    draw_text(move_name, x + 10, y + 6)
+    draw_text(move_name, x + 10, y + 6, theme: :white)
     # Draw move type icon
     type_number = GameData::Type.get(move_data.display_type(@pokemon)).icon_position
     draw_image(@bitmaps[:types], x + 10, y + 32,
@@ -158,13 +152,13 @@ class UI::MoveReminderVisuals < UI::BaseVisuals
     move = @moves[@index]
     move_data = GameData::Move.get(move)
     # Power
-    draw_text(_INTL("POWER"), 278, 120)
+    draw_text(_INTL("POWER"), 278, 120, theme: :white)
     power_text = move_data.display_power(@pokemon)
     power_text = "---" if power_text == 0   # Status move
     power_text = "???" if power_text == 1   # Variable power move
     draw_text(power_text, 480, 120, align: :right, theme: :black)
     # Accuracy
-    draw_text(_INTL("ACCURACY"), 278, 152)
+    draw_text(_INTL("ACCURACY"), 278, 152, theme: :white)
     accuracy = move_data.display_accuracy(@pokemon)
     if accuracy == 0
       draw_text("---", 480, 152, align: :right, theme: :black)

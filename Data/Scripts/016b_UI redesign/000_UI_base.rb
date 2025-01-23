@@ -5,15 +5,22 @@ module UI
   module SpriteContainerMixin
     UI_FOLDER         = "Graphics/UI/"
     GRAPHICS_FOLDER   = ""   # Subfolder in UI_FOLDER
-    TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-      :default => [Color.new(72, 72, 72), Color.new(160, 160, 160)]   # Base and shadow colour
+    DEFAULT_TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
+      :default => [Color.new(88, 88, 80), Color.new(168, 184, 184)],   # Base and shadow colour
+      :black   => [Color.new(64, 64, 64), Color.new(176, 176, 176)],
+      :white   => [Color.new(248, 248, 248), Color.new(40, 40, 40)],
+      :gray    => [Color.new(88, 88, 80), Color.new(168, 184, 184)],
+      :male    => [Color.new(24, 112, 216), Color.new(136, 168, 208)],
+      :female  => [Color.new(248, 56, 32), Color.new(224, 152, 144)]
     }
+    TEXT_COLOR_THEMES = {}   # Extra color themes to be defined in child classes
 
     def add_overlay(overlay, overlay_width = -1, overlay_height = -1)
       overlay_width = Graphics.width if overlay_width < 0
       overlay_height = Graphics.height if overlay_height < 0
       @sprites[overlay] = BitmapSprite.new(overlay_width, overlay_height, @viewport)
       @sprites[overlay].z = 1000
+      DEFAULT_TEXT_COLOR_THEMES.each_pair { |key, values| @sprites[overlay].add_text_theme(key, *values) }
       self.class::TEXT_COLOR_THEMES.each_pair { |key, values| @sprites[overlay].add_text_theme(key, *values) }
       pbSetSystemFont(@sprites[overlay].bitmap)
     end
@@ -77,6 +84,10 @@ module UI
       return base_filename
     end
 
+    def get_text_color_theme(theme)
+      return self.class::TEXT_COLOR_THEMES[theme] || DEFAULT_TEXT_COLOR_THEMES[theme] || DEFAULT_TEXT_COLOR_THEMES[:default]
+    end
+
     #---------------------------------------------------------------------------
 
     # NOTE: max_width should include the width of the text shadow at the end of
@@ -103,14 +114,14 @@ module UI
 
     def draw_paragraph_text(string, text_x, text_y, text_width, num_lines, theme: :default, overlay: :overlay)
       drawTextEx(@sprites[overlay].bitmap, text_x, text_y, text_width, num_lines,
-                string, *self.class::TEXT_COLOR_THEMES[theme])
+                string, *get_text_color_theme(theme))
     end
 
     # NOTE: This also draws string in a paragraph, but with no limit on the
     #       number of lines.
     def draw_formatted_text(string, text_x, text_y, text_width, theme: :default, overlay: :overlay)
       drawFormattedTextEx(@sprites[overlay].bitmap, text_x, text_y, text_width,
-                          string, *self.class::TEXT_COLOR_THEMES[theme])
+                          string, *get_text_color_theme(theme))
     end
 
     def draw_image(filename, image_x, image_y, src_x = 0, src_y = 0, src_width = -1, src_height = -1, overlay: :overlay)
@@ -307,13 +318,14 @@ module UI
   #=============================================================================
   class BaseVisuals
     attr_reader :sprites
-    attr_reader :mode
+    attr_reader :mode, :sub_mode
 
     BACKGROUND_FILENAME = "bg"
 
     include SpriteContainerMixin
 
     def initialize
+      @sub_mode = :none
       @bitmaps = {}
       @sprites = {}
       initialize_viewport
@@ -405,6 +417,10 @@ module UI
 
     def index
       return 0
+    end
+
+    def set_sub_mode(sub_mode = :none)
+      @sub_mode = sub_mode
     end
 
     #---------------------------------------------------------------------------
@@ -748,6 +764,10 @@ module UI
 
     def index
       return @visuals.index
+    end
+
+    def set_sub_mode(sub_mode = :none)
+      @visuals.set_sub_mode(sub_mode)
     end
 
     #-----------------------------------------------------------------------------

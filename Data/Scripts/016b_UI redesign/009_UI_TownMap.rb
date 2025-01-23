@@ -11,17 +11,12 @@ class UI::TownMapVisuals < UI::BaseVisuals
   CURSOR_MOVE_TIME     = 0.08          # In seconds
   ZOOM_TIME            = 0.2           # In seconds
   ZOOM_CURSOR_POSITION = [MAP_SIZE[0] / 4, MAP_SIZE[1] / 2]
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(248, 248, 248), Color.new(0, 0, 0)],   # Base and shadow colour
-    :black   => [Color.new(64, 64, 64), Color.new(176, 176, 176)]
-  }
-  MARKINGS_COUNT = 4    # Number of markings a point can have
-  MARKING_SPACING = 8   # In the markings panel (where markings are changed)
+  MARKINGS_COUNT       = 4   # Number of markings a point can have
+  MARKING_SPACING      = 8   # In the markings panel (where markings are changed)
 
   def initialize(region = 0, mode = :normal)
     @region        = region
     @mode          = mode
-    @sub_mode      = :none   # Could be toggled to :fly
     @cursor_offset = {:x => 0, :y => 0}
     load_region_data
     find_visited_regions
@@ -471,13 +466,13 @@ class UI::TownMapVisuals < UI::BaseVisuals
 
   def start_fly_mode
     return if @mode == :fly || @sub_mode == :fly
-    @sub_mode = :fly
+    set_sub_mode(:fly)
     generate_fly_icons
     refresh_input_helpers
   end
 
   def end_fly_mode
-    @sub_mode = :none
+    set_sub_mode
     clear_fly_icons
     refresh_input_helpers
   end
@@ -554,7 +549,7 @@ class UI::TownMapVisuals < UI::BaseVisuals
       name = pbGetMessageFromHash(MessageTypes::REGION_LOCATION_NAMES, point_data[:real_name])
       name = name.gsub(/\\PN/, $player.name)
       name = name.gsub(/\\v\[(\d+)\]/) { |num| $game_variables[$~[1].to_i].to_s }
-      theme = (@mode == :wall_map) ? :black : :default
+      theme = (@mode == :wall_map) ? :black : :white
       draw_text(name, @sprites[:map_name_overlay].width / 2, 6, align: :center, theme: theme, overlay: :map_name_overlay)
     end
   end
@@ -571,7 +566,8 @@ class UI::TownMapVisuals < UI::BaseVisuals
                 number * @bitmaps[:input_icons].height, 0,
                 @bitmaps[:input_icons].height, @bitmaps[:input_icons].height,
                 overlay: :input_helpers_overlay)
-      draw_text(action_text, input_x + @bitmaps[:input_icons].height + icon_text_spacing, action_text_y, overlay: :input_helpers_overlay)
+      draw_text(action_text, input_x + @bitmaps[:input_icons].height + icon_text_spacing, action_text_y,
+                theme: :white, overlay: :input_helpers_overlay)
       input_x += @bitmaps[:input_icons].height + icon_text_spacing
       input_x += @sprites[:input_helpers_overlay].bitmap.text_size(action_text).width
       input_x += input_spacing
@@ -636,7 +632,7 @@ class UI::TownMapVisuals < UI::BaseVisuals
       description = pbGetMessageFromHash(MessageTypes::REGION_LOCATION_DESCRIPTIONS, point_data[:real_description])
       description = description.gsub(/\\PN/, $player.name)
       description = description.gsub(/\\v\[(\d+)\]/) { |num| $game_variables[$~[1].to_i].to_s }
-      draw_formatted_text(description, 18, 144, 210, overlay: :details_overlay)
+      draw_formatted_text(description, 18, 144, 210, theme: :white, overlay: :details_overlay)
     end
   end
 

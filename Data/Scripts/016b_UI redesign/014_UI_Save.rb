@@ -5,11 +5,10 @@ class UI::SavePanel < UI::SpriteContainer
   attr_reader :sprites
 
   GRAPHICS_FOLDER = "Save/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(88, 88, 80), Color.new(168, 184, 184)],   # Base and shadow colour
-    :white   => [Color.new(248, 248, 248), Color.new(172, 188, 188)],
-    :male    => [Color.new(0, 112, 248), Color.new(120, 184, 232)],
-    :female  => [Color.new(232, 32, 16), Color.new(248, 168, 184)]
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
+    :white  => [Color.new(248, 248, 248), Color.new(172, 188, 188)],
+    :male   => [Color.new(0, 112, 248), Color.new(120, 184, 232)],
+    :female => [Color.new(232, 32, 16), Color.new(248, 168, 184)]
   }
   PANEL_WIDTH  = 384
   PANEL_HEIGHT = 204
@@ -157,7 +156,7 @@ class UI::SavePanel < UI::SpriteContainer
 
   def draw_save_file_text
     if !@save_data
-      draw_text(_INTL("Create a new save file"), width / 2, (height / 2) - 10, align: :center)
+      draw_text(_INTL("Create a new save file"), width / 2, (height / 2) - 10, align: :center, theme: :gray)
       return
     end
     gender_theme = :default
@@ -173,20 +172,20 @@ class UI::SavePanel < UI::SpriteContainer
     map_name = pbGetMapNameFromId(map_id)
     map_name = map_name.gsub(/\\PN/, @save_data[:player].name)
     map_name = map_name.gsub(/\\v\[(\d+)\]/) { |num| @save_data[:variables][$~[1].to_i].to_s }
-    draw_text(map_name, 14, 78)
+    draw_text(map_name, 14, 78, theme: :gray)
     # Gym Badges
     draw_text(_INTL("Badges:"), 14, 110, theme: :white)
-    draw_text(@save_data[:player].badge_count.to_s, 222, 110, align: :right)
+    draw_text(@save_data[:player].badge_count.to_s, 222, 110, align: :right, theme: :gray)
     # Pokédex owned count
     draw_text(_INTL("Pokédex:"), 14, 142, theme: :white)
-    draw_text(@save_data[:player].pokedex.seen_count.to_s, 222, 142, align: :right)
+    draw_text(@save_data[:player].pokedex.seen_count.to_s, 222, 142, align: :right, theme: :gray)
     # Time played
     draw_text(_INTL("Play time:"), 14, 174, theme: :white)
     play_time = @save_data[:stats]&.real_play_time.to_i || 0
     hour = (play_time / 60) / 60
     min  = (play_time / 60) % 60
     play_time_text = (hour > 0) ? _INTL("{1}h {2}m", hour, min) : _INTL("{1}m", min)
-    draw_text(play_time_text, 222, 174, align: :right)
+    draw_text(play_time_text, 222, 174, align: :right, theme: :gray)
     save_time = @save_data[:stats]&.real_time_saved
     if save_time
       save_time = Time.at(save_time)
@@ -195,9 +194,9 @@ class UI::SavePanel < UI::SpriteContainer
       else
         save_text = save_time.strftime("%-d/%-m/%Y")
       end
-      draw_text(save_text, PANEL_WIDTH - 14, 174, align: :right)
+      draw_text(save_text, PANEL_WIDTH - 14, 174, align: :right, theme: :gray)
     else
-      draw_text("???", PANEL_WIDTH - 14, 174, align: :right)
+      draw_text("???", PANEL_WIDTH - 14, 174, align: :right, theme: :gray)
     end
   end
 
@@ -215,9 +214,6 @@ class UI::SaveVisuals < UI::BaseVisuals
   attr_reader :index
 
   GRAPHICS_FOLDER = "Save/"   # Subfolder in Graphics/UI
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(80, 80, 88), Color.new(176, 192, 192)]   # Base and shadow colour
-  }
   PANEL_SPACING   = 8
 
   # save_data here is an array of [save filename, save data hash]. It has been
@@ -327,19 +323,19 @@ class UI::SaveVisuals < UI::BaseVisuals
             hour = (delta_time / 60) / 60
             min  = (delta_time / 60) % 60
             if hour > 0
-              draw_text(_INTL("Play time since save: {1}h {2}m", hour, min), 8, 4)
+              draw_text(_INTL("Play time since save: {1}h {2}m", hour, min), 8, 4, theme: :gray)
             else
-              draw_text(_INTL("Play time since save: {1}m", min), 8, 4)
+              draw_text(_INTL("Play time since save: {1}m", min), 8, 4, theme: :gray)
             end
           else
-            draw_text(_INTL("Alternate version of your adventure!"), 8, 4)
+            draw_text(_INTL("Alternate version of your adventure!"), 8, 4, theme: :gray)
           end
         else
-          draw_text(_INTL("Different adventure!"), 8, 4)
+          draw_text(_INTL("Different adventure!"), 8, 4, theme: :gray)
         end
       end
       if @save_data[@index]
-        draw_text(sprintf("%d/%d", @index + 1, @save_data.length), Graphics.width - 8, 4, align: :right)
+        draw_text(sprintf("%d/%d", @index + 1, @save_data.length), Graphics.width - 8, 4, align: :right, theme: :gray)
       end
     elsif $stats.save_count > 0 && $stats.real_time_saved
       save_time = Time.at($stats.real_time_saved)
@@ -349,7 +345,7 @@ class UI::SaveVisuals < UI::BaseVisuals
         date_text = save_time.strftime("%-d/%-m/%Y")
       end
       time_text = save_time.strftime("%H:%M")
-      draw_text(_INTL("Last saved on {1} at {2}", date_text, time_text), 8, 4)
+      draw_text(_INTL("Last saved on {1} at {2}", date_text, time_text), 8, 4, theme: :gray)
     end
   end
 

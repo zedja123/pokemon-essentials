@@ -45,12 +45,12 @@ end
 # Pokémon Mart.
 #===============================================================================
 class UI::MartVisualsList < Window_DrawableCommand
-  def initialize(stock, x, y, width, height, viewport = nil)
+  def initialize(stock, x, y, width, height, screen, viewport = nil)
     @stock = stock
     super(x, y, width, height, viewport)
     @selarrow    = AnimatedBitmap.new(bag_folder + "cursor")
-    @baseColor   = UI::MartVisuals::TEXT_COLOR_THEMES[:black][0]
-    @shadowColor = UI::MartVisuals::TEXT_COLOR_THEMES[:black][1]
+    @baseColor   = screen.get_text_color_theme(:gray)[0]
+    @shadowColor = screen.get_text_color_theme(:gray)[1]
     self.windowskin = nil
   end
 
@@ -128,10 +128,7 @@ class UI::MartVisuals < UI::BaseVisuals
   attr_reader :pocket
 
   GRAPHICS_FOLDER   = "Mart/"   # Subfolder in Graphics/UI
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default   => [Color.new(248, 248, 248), Color.new(56, 56, 56)],   # Base and shadow colour
-    :white     => [Color.new(248, 248, 248), Color.new(56, 56, 56)],
-    :black     => [Color.new(88, 88, 80), Color.new(168, 184, 184)],
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
     :expensive => [Color.new(224, 0, 0), Color.new(248, 144, 144)]
   }
   ITEMS_VISIBLE = 7
@@ -150,9 +147,9 @@ class UI::MartVisuals < UI::BaseVisuals
   end
 
   def initialize_item_list
-    @sprites[:item_list] = UI::MartVisualsList.new(@stock, 152, 10, 374, 38 + (ITEMS_VISIBLE * 32), @viewport)
-    @sprites[:item_list].expensive_base_color   = TEXT_COLOR_THEMES[:expensive][0]
-    @sprites[:item_list].expensive_shadow_color = TEXT_COLOR_THEMES[:expensive][1]
+    @sprites[:item_list] = UI::MartVisualsList.new(@stock, 152, 10, 374, 38 + (ITEMS_VISIBLE * 32), self, @viewport)
+    @sprites[:item_list].expensive_base_color   = get_text_color_theme(:expensive)[0]
+    @sprites[:item_list].expensive_shadow_color = get_text_color_theme(:expensive)[1]
     @sprites[:item_list].active                 = false
   end
 
@@ -163,8 +160,8 @@ class UI::MartVisuals < UI::BaseVisuals
     @sprites[:item_description] = Window_UnformattedTextPokemon.newWithSize(
       "", 80, 272, Graphics.width - 98, 128, @viewport
     )
-    @sprites[:item_description].baseColor   = TEXT_COLOR_THEMES[:white][0]
-    @sprites[:item_description].shadowColor = TEXT_COLOR_THEMES[:white][1]
+    @sprites[:item_description].baseColor   = get_text_color_theme(:white)[0]
+    @sprites[:item_description].shadowColor = get_text_color_theme(:white)[1]
     @sprites[:item_description].visible     = true
     @sprites[:item_description].windowskin  = nil
   end
@@ -172,8 +169,8 @@ class UI::MartVisuals < UI::BaseVisuals
   def initialize_money_window
     @sprites[:money_window] = Window_AdvancedTextPokemon.newWithSize("", 0, 0, 162, 96, @viewport)
     @sprites[:money_window].setSkin("Graphics/Windowskins/goldskin")
-    @sprites[:money_window].baseColor      = TEXT_COLOR_THEMES[:black][0]
-    @sprites[:money_window].shadowColor    = TEXT_COLOR_THEMES[:black][1]
+    @sprites[:money_window].baseColor      = get_text_color_theme(:gray)[0]
+    @sprites[:money_window].shadowColor    = get_text_color_theme(:gray)[1]
     @sprites[:money_window].letterbyletter = false
     @sprites[:money_window].visible        = true
   end
@@ -183,8 +180,8 @@ class UI::MartVisuals < UI::BaseVisuals
       _INTL("In Bag:<r>{1}", @bag.quantity(item)), 0, 0, 162, 64, @viewport
     )
     @sprites[:bag_quantity_window].setSkin("Graphics/Windowskins/goldskin")
-    @sprites[:bag_quantity_window].baseColor      = TEXT_COLOR_THEMES[:black][0]
-    @sprites[:bag_quantity_window].shadowColor    = TEXT_COLOR_THEMES[:black][1]
+    @sprites[:bag_quantity_window].baseColor      = get_text_color_theme(:gray)[0]
+    @sprites[:bag_quantity_window].shadowColor    = get_text_color_theme(:gray)[1]
     @sprites[:bag_quantity_window].letterbyletter = false
     @sprites[:bag_quantity_window].visible        = true
     @sprites[:bag_quantity_window].y              = Graphics.height - 102 - @sprites[:bag_quantity_window].height
@@ -432,15 +429,15 @@ class UI::BagSellVisuals < UI::BagVisuals
     @sprites[:money_window] = Window_AdvancedTextPokemon.newWithSize("", 0, 36, 184, 96, @viewport)
     @sprites[:money_window].setSkin("Graphics/Windowskins/goldskin")
     @sprites[:money_window].z              = 2000
-    @sprites[:money_window].baseColor      = TEXT_COLOR_THEMES[:black][0]
-    @sprites[:money_window].shadowColor    = TEXT_COLOR_THEMES[:black][1]
+    @sprites[:money_window].baseColor      = get_text_color_theme(:gray)[0]
+    @sprites[:money_window].shadowColor    = get_text_color_theme(:gray)[1]
     @sprites[:money_window].letterbyletter = false
     @sprites[:money_window].visible        = true
     @sprites[:unit_price_window] = Window_AdvancedTextPokemon.newWithSize("", 0, 184, 184, 96, @viewport)
     @sprites[:unit_price_window].setSkin("Graphics/Windowskins/goldskin")
     @sprites[:unit_price_window].z              = 2000
-    @sprites[:unit_price_window].baseColor      = TEXT_COLOR_THEMES[:black][0]
-    @sprites[:unit_price_window].shadowColor    = TEXT_COLOR_THEMES[:black][1]
+    @sprites[:unit_price_window].baseColor      = get_text_color_theme(:gray)[0]
+    @sprites[:unit_price_window].shadowColor    = get_text_color_theme(:gray)[1]
     @sprites[:unit_price_window].letterbyletter = false
     @sprites[:unit_price_window].visible        = true
   end

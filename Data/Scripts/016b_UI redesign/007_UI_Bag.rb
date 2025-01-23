@@ -167,10 +167,7 @@ class UI::BagVisuals < UI::BaseVisuals
   attr_reader :pocket
 
   GRAPHICS_FOLDER   = "Bag/"   # Subfolder in Graphics/UI
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default   => [Color.new(248, 248, 248), Color.new(56, 56, 56)],   # Base and shadow colour
-    :white     => [Color.new(248, 248, 248), Color.new(56, 56, 56)],
-    :black     => [Color.new(88, 88, 80), Color.new(168, 184, 184)],
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
     :switching => [Color.new(224, 0, 0), Color.new(248, 144, 144)]
   }
   SLIDER_COORDS = {   # Size of elements in slider graphic
@@ -236,10 +233,10 @@ class UI::BagVisuals < UI::BaseVisuals
 
   def initialize_item_list
     @sprites[:item_list] = UI::BagVisualsList.new(@bag, 166, 28, 332, 40 + 28 + (ITEMS_VISIBLE * 32), @viewport)
-    @sprites[:item_list].baseColor              = TEXT_COLOR_THEMES[:black][0]
-    @sprites[:item_list].shadowColor            = TEXT_COLOR_THEMES[:black][1]
-    @sprites[:item_list].switching_base_color   = TEXT_COLOR_THEMES[:switching][0]
-    @sprites[:item_list].switching_shadow_color = TEXT_COLOR_THEMES[:switching][1]
+    @sprites[:item_list].baseColor              = get_text_color_theme(:black)[0]
+    @sprites[:item_list].shadowColor            = get_text_color_theme(:black)[1]
+    @sprites[:item_list].switching_base_color   = get_text_color_theme(:switching)[0]
+    @sprites[:item_list].switching_shadow_color = get_text_color_theme(:switching)[1]
     @sprites[:item_list].items                  = @bag.pockets[@pocket]
     @sprites[:item_list].index                  = @bag.last_viewed_index(@pocket) if @mode != :choose_item
     @sprites[:item_list].active                 = false
@@ -252,8 +249,8 @@ class UI::BagVisuals < UI::BaseVisuals
     @sprites[:item_description] = Window_UnformattedTextPokemon.newWithSize(
       "", 76, 272, Graphics.width - 98, 128, @viewport
     )
-    @sprites[:item_description].baseColor   = TEXT_COLOR_THEMES[:white][0]
-    @sprites[:item_description].shadowColor = TEXT_COLOR_THEMES[:white][1]
+    @sprites[:item_description].baseColor   = get_text_color_theme(:white)[0]
+    @sprites[:item_description].shadowColor = get_text_color_theme(:white)[1]
     @sprites[:item_description].visible     = true
     @sprites[:item_description].windowskin  = nil
   end
@@ -363,9 +360,9 @@ class UI::BagVisuals < UI::BaseVisuals
     set_pocket(new_pocket)
   end
 
-  def set_sub_mode(sub_mode = :normal)
-    @sub_mode = sub_mode
-    @sprites[:item_list].sort_mode = (sub_mode == :rearrange_items)
+  def set_sub_mode(sub_mode = :none)
+    super
+    @sprites[:item_list].sort_mode = (@sub_mode == :rearrange_items)
   end
 
   # All screen menu options are related to sorting.
@@ -457,7 +454,7 @@ class UI::BagVisuals < UI::BaseVisuals
       draw_image(@bitmaps[:input_icons], action_icon_x, action_icon_y,
                  2 * @bitmaps[:input_icons].height, 0,
                  @bitmaps[:input_icons].height, @bitmaps[:input_icons].height)
-      draw_text(action_text, action_text_x, action_text_y)
+      draw_text(action_text, action_text_x, action_text_y, theme: :white)
     end
   end
 
@@ -577,34 +574,34 @@ class UI::BagVisuals < UI::BaseVisuals
     move = GameData::Item.get(item).move
     move_data = GameData::Move.get(move)
     # Type
-    draw_text(_INTL("Type"), 4, 14, overlay: :move_details_overlay)
+    draw_text(_INTL("Type"), 4, 14, theme: :white, overlay: :move_details_overlay)
     type_number = GameData::Type.get(move_data.type).icon_position
     draw_image(@bitmaps[:types], 106, 10,
                0, type_number * GameData::Type::ICON_SIZE[1], *GameData::Type::ICON_SIZE,
                overlay: :move_details_overlay)
     # Category
-    draw_text(_INTL("Category"), 4, 46, overlay: :move_details_overlay)
+    draw_text(_INTL("Category"), 4, 46, theme: :white, overlay: :move_details_overlay)
     draw_image(@bitmaps[:categories], 106, 42,
                0, move_data.category * GameData::Move::CATEGORY_ICON_SIZE[1], *GameData::Move::CATEGORY_ICON_SIZE,
                overlay: :move_details_overlay)
     # Power
-    draw_text(_INTL("Power"), 4, 78, overlay: :move_details_overlay)
+    draw_text(_INTL("Power"), 4, 78, theme: :white, overlay: :move_details_overlay)
     power_text = move_data.power
     power_text = "---" if power_text == 0   # Status move
     power_text = "???" if power_text == 1   # Variable power move
-    draw_text(power_text, 156, 78, align: :right, overlay: :move_details_overlay)
+    draw_text(power_text, 156, 78, align: :right, theme: :white, overlay: :move_details_overlay)
     # Accuracy
-    draw_text(_INTL("Accuracy"), 4, 110, overlay: :move_details_overlay)
+    draw_text(_INTL("Accuracy"), 4, 110, theme: :white, overlay: :move_details_overlay)
     accuracy = move_data.accuracy
     if accuracy == 0
-      draw_text("---", 156, 110, align: :right, overlay: :move_details_overlay)
+      draw_text("---", 156, 110, align: :right, theme: :white, overlay: :move_details_overlay)
     else
-      draw_text(accuracy, 156, 110, align: :right, overlay: :move_details_overlay)
-      draw_text("%", 156, 110, overlay: :move_details_overlay)
+      draw_text(accuracy, 156, 110, align: :right, theme: :white, overlay: :move_details_overlay)
+      draw_text("%", 156, 110, theme: :white, overlay: :move_details_overlay)
     end
     # PP
-    draw_text(_INTL("PP"), 4, 142, overlay: :move_details_overlay)
-    draw_text(move_data.total_pp, 156, 142, align: :right, overlay: :move_details_overlay)
+    draw_text(_INTL("PP"), 4, 142, theme: :white, overlay: :move_details_overlay)
+    draw_text(move_data.total_pp, 156, 142, align: :right, theme: :white, overlay: :move_details_overlay)
   end
 
   def refresh_on_index_changed(old_index)
@@ -670,7 +667,7 @@ class UI::BagVisuals < UI::BaseVisuals
       end
     when Input::BACK
       return :switch_item_cancel if switching?
-      return :clear_sub_mode if (@sub_mode || :normal) != :normal && pocket_sortable?
+      return :clear_sub_mode if (@sub_mode || :none) != :none && pocket_sortable?
       pbPlayCloseMenuSE
       return :quit
     end
@@ -768,10 +765,6 @@ class UI::Bag < UI::BaseScreen
 
   def set_filter_proc(filter_proc)
     @visuals.set_filter_proc(filter_proc)
-  end
-
-  def set_sub_mode(sub_mode = :normal)
-    @visuals.set_sub_mode(sub_mode)
   end
 
   def switch_index
@@ -876,7 +869,7 @@ UIActionHandlers.add(UI::Bag::SCREEN_ID, :rearrange_items_mode, {
 UIActionHandlers.add(UI::Bag::SCREEN_ID, :clear_sub_mode, {
   :effect => proc { |screen|
     pbPlayCancelSE
-    screen.set_sub_mode(:normal)
+    screen.set_sub_mode
   }
 })
 

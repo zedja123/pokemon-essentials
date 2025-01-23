@@ -81,15 +81,10 @@ end
 #===============================================================================
 class UI::PokemonSummaryVisuals < UI::BaseVisuals
   GRAPHICS_FOLDER   = "Summary/"   # Subfolder in Graphics/UI
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default      => [Color.new(248, 248, 248), Color.new(104, 104, 104)],   # Base and shadow colour
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
     :white        => [Color.new(248, 248, 248), Color.new(104, 104, 104)],
     :raised_stat  => [Color.new(248, 248, 248), Color.new(136, 96, 72)],
     :lowered_stat => [Color.new(248, 248, 248), Color.new(64, 120, 152)],
-    :black        => [Color.new(64, 64, 64), Color.new(176, 176, 176)],
-    :faded        => [Color.new(192, 200, 208), Color.new(208, 216, 224)],
-    :male         => [Color.new(24, 112, 216), Color.new(136, 168, 208)],
-    :female       => [Color.new(248, 56, 32), Color.new(224, 152, 144)],
     :shiny        => [Color.new(248, 56, 32), Color.new(224, 152, 144)],
     :pp_half      => [Color.new(248, 192, 0), Color.new(144, 104, 0)],
     :pp_quarter   => [Color.new(248, 136, 32), Color.new(144, 72, 24)],
@@ -426,7 +421,7 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   end
 
   def draw_page_name
-    draw_text(PAGE_HANDLERS[@page][:name].call, 30, 22)
+    draw_text(PAGE_HANDLERS[@page][:name].call, 30, 22, theme: :white)
   end
 
   def draw_page_icons
@@ -462,7 +457,7 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   def draw_pokemon_name
     pokemon_name = @pokemon.name
     pokemon_name = crop_text(pokemon_name, 152)
-    draw_text(pokemon_name, 42, 68)
+    draw_text(pokemon_name, 42, 68, theme: :white)
   end
 
   def draw_shiny_icon
@@ -603,7 +598,7 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   #-----------------------------------------------------------------------------
 
   def draw_pokedex_number
-    draw_text(_INTL("Dex No."), 238, 86)
+    draw_text(_INTL("Dex No."), 238, 86, theme: :white)
     # Figure out what the Dex number is
     dex_num = 0
     dex_num_shift = false
@@ -633,15 +628,15 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   end
 
   def draw_species
-    draw_text(_INTL("Species"), 238, 118)
+    draw_text(_INTL("Species"), 238, 118, theme: :white)
     species_name = @pokemon.speciesName
     species_name = crop_text(species_name, 144)
     draw_text(species_name, 428, 118, align: :center, theme: :black)
   end
 
   def draw_original_trainer_details
-    draw_text(_INTL("OT"), 238, 150)
-    draw_text(_INTL("ID No."), 238, 182)
+    draw_text(_INTL("OT"), 238, 150, theme: :white)
+    draw_text(_INTL("ID No."), 238, 182, theme: :white)
     owner_name = (@pokemon.owner.name.empty?) ? _INTL("RENTAL") : @pokemon.owner.name
     owner_name = crop_text(owner_name, 144)
     owner_theme = [:male, :female][@pokemon.owner.gender || 99] || :black
@@ -653,7 +648,7 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   def draw_held_item
     @sprites[:held_item_icon].visible = true
     @sprites[:held_item_icon].item = @pokemon.item_id
-    draw_text(_INTL("Held Item"), 302, 230)
+    draw_text(_INTL("Held Item"), 302, 230, theme: :white)
     # Write the held item's name
     item_name = (@pokemon.hasItem?) ? @pokemon.item.name : _INTL("None")
     item_name = crop_text(item_name, 192)
@@ -663,9 +658,9 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   def draw_exp
     return if @pokemon.shadowPokemon?
     # Draw text
-    draw_text(_INTL("Exp. Points"), 238, 310)
+    draw_text(_INTL("Exp. Points"), 238, 310, theme: :white)
     draw_text(@pokemon.exp.to_s_formatted, 490, 310, align: :right, theme: :black)
-    draw_text(_INTL("To Next Lv."), 238, 342)
+    draw_text(_INTL("To Next Lv."), 238, 342, theme: :white)
     end_exp = @pokemon.growth_rate.minimum_exp_for_level(@pokemon.level + 1)
     draw_text((end_exp - @pokemon.exp).to_s_formatted, 490, 342, align: :right, theme: :black)
     # Draw Exp bar
@@ -692,13 +687,13 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
                      _INTL("The door to its heart is opening wider."),
                      _INTL("The door to its heart is opening up."),
                      _INTL("The door to its heart is tightly shut.")][@pokemon.heartStage]
-    draw_formatted_text(heart_message, 232, 310, 268, theme: :black)
+    draw_paragraph_text(heart_message, 232, 310, 268, 2, theme: :black)
   end
 
   def draw_stats
     # Determine which stats are boosted and lowered by the Pokémon's nature
     stat_themes = {}
-    GameData::Stat.each_main { |s| stat_themes[s.id] = :default }
+    GameData::Stat.each_main { |s| stat_themes[s.id] = :white }
     if !@pokemon.shadowPokemon? || @pokemon.heartStage <= 3
       @pokemon.nature_for_stats.stat_changes.each do |change|
         stat_themes[change[0]] = :raised_stat if change[1] > 0
@@ -716,7 +711,7 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   end
 
   def draw_ability
-    draw_text(_INTL("Ability"), 224, 262)
+    draw_text(_INTL("Ability"), 224, 262, theme: :white)
     ability = @pokemon.ability
     return if !ability
     ability_name = ability.name
@@ -778,13 +773,13 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
   def draw_move_properties
     selected_move = ((@move_index || 0) == Pokemon::MAX_MOVES) ? @new_move : @pokemon.moves[@move_index || 0]
     # Power
-    draw_text(_INTL("POWER"), 20, 128)
+    draw_text(_INTL("POWER"), 20, 128, theme: :white)
     power_text = selected_move.display_power(@pokemon)
     power_text = "---" if power_text == 0   # Status move
     power_text = "???" if power_text == 1   # Variable power move
     draw_text(power_text, 222, 128, align: :right, theme: :black)
     # Accuracy
-    draw_text(_INTL("ACCURACY"), 20, 160)
+    draw_text(_INTL("ACCURACY"), 20, 160, theme: :white)
     accuracy = selected_move.display_accuracy(@pokemon)
     if accuracy == 0
       draw_text("---", 222, 160, align: :right, theme: :black)
@@ -824,7 +819,7 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
     if ribbon_id
       ribbon_data = GameData::Ribbon.get(ribbon_id)
       # Draw name of selected ribbon
-      draw_text(ribbon_data.name, 18, 292)
+      draw_text(ribbon_data.name, 18, 292, theme: :white)
       # Draw selected ribbon's description
       draw_paragraph_text(ribbon_data.description, 18, 324, 480, 2, theme: :black)
     end
@@ -832,8 +827,8 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
 
   def draw_memo
     # Set up memo
-    red_text_tag = shadowc3tag(*TEXT_COLOR_THEMES[:shiny])
-    black_text_tag = shadowc3tag(*TEXT_COLOR_THEMES[:black])
+    red_text_tag = shadowc3tag(*get_text_color_theme(:shiny))
+    black_text_tag = shadowc3tag(*get_text_color_theme(:black))
     memo = ""
     show_nature = (!@pokemon.shadowPokemon? || @pokemon.heartStage <= 3)
     # Add nature to memo
@@ -938,8 +933,8 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
 
   def draw_egg_memo
     # Set up memo
-    red_text_tag = shadowc3tag(*TEXT_COLOR_THEMES[:shiny])
-    black_text_tag = shadowc3tag(*TEXT_COLOR_THEMES[:black])
+    red_text_tag = shadowc3tag(*get_text_color_theme(:shiny))
+    black_text_tag = shadowc3tag(*get_text_color_theme(:black))
     memo = ""
     # Add date received to memo
     if @pokemon.timeReceived
@@ -964,7 +959,7 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
     # Draw obtain text
     draw_formatted_text(memo, 232, 86, 268)
     # Add Egg Watch blurb to memo
-    draw_text(_INTL("The Egg Watch"), 238, 246)
+    draw_text(_INTL("The Egg Watch"), 238, 246, theme: :white)
     egg_state = _INTL("It looks like this Egg will take a long time to hatch.")
     egg_state = _INTL("What will hatch from this? It doesn't seem close to hatching.") if @pokemon.steps_to_hatch < 10_200
     egg_state = _INTL("It appears to move occasionally. It may be close to hatching.") if @pokemon.steps_to_hatch < 2550
@@ -1040,9 +1035,9 @@ class UI::PokemonSummaryVisuals < UI::BaseVisuals
                  overlay: :marking_overlay)
     end
     # Draw text
-    draw_text(_INTL("Mark {1}", @pokemon.name), 368, 102, align: :center, overlay: :marking_overlay)
-    draw_text(_INTL("OK"), 368, 254, align: :center, overlay: :marking_overlay)
-    draw_text(_INTL("Cancel"), 368, 304, align: :center, overlay: :marking_overlay)
+    draw_text(_INTL("Mark {1}", @pokemon.name), 368, 102, align: :center, theme: :white, overlay: :marking_overlay)
+    draw_text(_INTL("OK"), 368, 254, align: :center, theme: :white, overlay: :marking_overlay)
+    draw_text(_INTL("Cancel"), 368, 304, align: :center, theme: :white, overlay: :marking_overlay)
   end
 
   #-----------------------------------------------------------------------------

@@ -5,11 +5,8 @@ class UI::PokemonStorageVisualsSidePane < UI::SpriteContainer
   attr_reader :pokemon
 
   GRAPHICS_FOLDER = "Storage/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(88, 88, 80), Color.new(168, 184, 184)],   # Base and shadow colour
-    :no_item => [Color.new(192, 200, 208), Color.new(212, 216, 220)],
-    :male    => [Color.new(24, 112, 216), Color.new(136, 168, 208)],
-    :female  => [Color.new(248, 56, 32), Color.new(224, 152, 144)]
+  TEXT_COLOR_THEMES = {   # Themes not in DEFAULT_TEXT_COLOR_THEMES
+    :no_item => [Color.new(192, 200, 208), Color.new(212, 216, 220)]
   }
   MARK_WIDTH  = 16
   MARK_HEIGHT = 16
@@ -83,7 +80,7 @@ class UI::PokemonStorageVisualsSidePane < UI::SpriteContainer
   def draw_name
     pokemon_name = @pokemon.name
     pokemon_name = crop_text(pokemon_name, 158)
-    draw_text(pokemon_name, 8, 14)
+    draw_text(pokemon_name, 8, 14, theme: :gray)
   end
 
   def draw_level
@@ -130,7 +127,7 @@ class UI::PokemonStorageVisualsSidePane < UI::SpriteContainer
     if @pokemon.hasItem?
       item_name = @pokemon.item.name
       item_name = crop_text(item_name, 166)
-      draw_text(item_name, 86, 316, align: :center)
+      draw_text(item_name, 86, 316, align: :center, theme: :gray)
     else
       draw_text(_INTL("No item"), 86, 316, align: :center, theme: :no_item)
     end
@@ -311,9 +308,6 @@ class UI::PokemonStorageVisualsBox < UI::SpriteContainer
   attr_reader :sprites
 
   GRAPHICS_FOLDER = "Storage/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(248, 248, 240), Color.new(40, 48, 48)],   # Base and shadow colour
-  }
 
   def initialize(storage, box_number, viewport)
     @storage = storage
@@ -423,7 +417,7 @@ class UI::PokemonStorageVisualsBox < UI::SpriteContainer
   def draw_box_name
     box_name = @storage[@box_number].name
     box_name = crop_text(box_name, 216)
-    draw_text(box_name, 162, 14, align: :center)
+    draw_text(box_name, 162, 14, align: :center, theme: :white)
   end
 
   def refresh_existing_pokemon
@@ -440,9 +434,6 @@ class UI::PokemonStorageVisualsPartyPanel < UI::SpriteContainer
   attr_reader :sprites
 
   GRAPHICS_FOLDER = "Storage/"
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(248, 248, 240), Color.new(40, 48, 48)],   # Base and shadow colour
-  }
 
   def initialize(party, mode, viewport)
     @party = party
@@ -524,7 +515,7 @@ class UI::PokemonStorageVisualsPartyPanel < UI::SpriteContainer
 
   def draw_button_text
     text = (@mode == :deposit) ? _INTL("Exit") : _INTL("Back")
-    draw_text(text, 86, 248, align: :center, outline: :outline)
+    draw_text(text, 86, 248, align: :center, outline: :outline, theme: :white)
   end
 
   def refresh_existing_pokemon
@@ -700,14 +691,10 @@ class UI::PokemonStorageVisuals < UI::BaseVisuals
   # -1 = party
   # 0+ = box number
   attr_reader :box
-  attr_reader :sub_mode
 
-  GRAPHICS_FOLDER   = "Storage/"   # Subfolder in Graphics/UI
-  TEXT_COLOR_THEMES = {   # These color themes are added to @sprites[:overlay]
-    :default => [Color.new(248, 248, 240), Color.new(40, 48, 48)],   # Base and shadow colour
-  }
-  MARKING_WIDTH  = 16
-  MARKING_HEIGHT = 16
+  GRAPHICS_FOLDER = "Storage/"   # Subfolder in Graphics/UI
+  MARKING_WIDTH   = 16
+  MARKING_HEIGHT  = 16
 
   def initialize(storage, mode = :normal)
     @storage = storage
@@ -840,9 +827,9 @@ class UI::PokemonStorageVisuals < UI::BaseVisuals
     refresh_on_index_changed(@index)
   end
 
-  def set_sub_mode(sub_mode = :normal)
-    @sub_mode = sub_mode
-    @sprites[:cursor].quick_swap_mode = (@sub_mode != :normal)
+  def set_sub_mode(sub_mode = :none)
+    super
+    @sprites[:cursor].quick_swap_mode = (@sub_mode != :none)
     @visible_proc = nil
     if @sub_mode == :rearrange_items
       @visible_proc = proc { |pkmn| pkmn.hasItem? }
@@ -1250,10 +1237,10 @@ class UI::PokemonStorageVisuals < UI::BaseVisuals
 
   def refresh_buttons
     if [:organize, :choose_pokemon].include?(@mode)
-      draw_text(_INTL("Party: {1}", @storage.party.length), 270, 334, align: :center, outline: :outline)
+      draw_text(_INTL("Party: {1}", @storage.party.length), 270, 334, align: :center, outline: :outline, theme: :white)
     end
     if @mode != :deposit
-      draw_text(_INTL("Exit"), 446, 334, align: :center, outline: :outline)
+      draw_text(_INTL("Exit"), 446, 334, align: :center, outline: :outline, theme: :white)
     end
   end
 
@@ -1329,8 +1316,8 @@ class UI::PokemonStorageVisuals < UI::BaseVisuals
                  overlay: :marking_overlay)
     end
     # Draw text
-    draw_text(_INTL("OK"), 400, 216, align: :center, outline: :outline, overlay: :marking_overlay)
-    draw_text(_INTL("Cancel"), 400, 280, align: :center, outline: :outline, overlay: :marking_overlay)
+    draw_text(_INTL("OK"), 400, 216, align: :center, outline: :outline, theme: :white, overlay: :marking_overlay)
+    draw_text(_INTL("Cancel"), 400, 280, align: :center, outline: :outline, theme: :white, overlay: :marking_overlay)
   end
 
   #-----------------------------------------------------------------------------
@@ -1482,7 +1469,7 @@ class UI::PokemonStorageVisuals < UI::BaseVisuals
       if showing_party_panel?
         return (@mode == :deposit) ? :exit_screen : :hide_party_panel
       end
-      return :clear_sub_mode if (@sub_mode || :normal) != :normal
+      return :clear_sub_mode if (@sub_mode || :none) != :none
       return :exit_screen
     when Input::JUMPUP
       pbPlayCursorSE
@@ -1671,10 +1658,6 @@ class UI::PokemonStorage < UI::BaseScreen
     @visuals.set_index(new_index)
   end
 
-  def set_sub_mode(sub_mode = :normal)
-    @visuals.set_sub_mode(sub_mode)
-  end
-
   def party_able_count
     return @storage.party.count { |pkmn| pkmn.able? }
   end
@@ -1736,7 +1719,7 @@ UIActionHandlers.add(UI::PokemonStorage::SCREEN_ID, :clear_sub_mode, {
       end
       next
     end
-    screen.set_sub_mode(:normal)
+    screen.set_sub_mode
   }
 })
 
