@@ -487,8 +487,13 @@ module Compiler
           when Array
             file.write(enumer[value])
           when Symbol, String
-            mod = Object.const_get(enumer.to_sym)
-            file.write(getConstantName(mod, value))
+            mod = GameData.const_get(enumer.to_sym)
+            if mod
+              file.write(mod.get(value).id.to_s)
+            else
+              mod = Object.const_get(enumer.to_sym)
+              file.write(getConstantName(mod, value))
+            end
           when Module
             file.write(getConstantName(enumer, value))
           when Hash
@@ -504,8 +509,12 @@ module Compiler
           when Array
             file.write((enumer[value].nil?) ? value : enumer[value])
           when Symbol, String
-            mod = Object.const_get(enumer.to_sym)
-            file.write(getConstantNameOrValue(mod, value))
+            if mod
+              file.write(mod.get(value).id.to_s)
+            else
+              mod = Object.const_get(enumer.to_sym)
+              file.write(getConstantNameOrValue(mod, value))
+            end
           when Module
             file.write(getConstantNameOrValue(enumer, value))
           when Hash

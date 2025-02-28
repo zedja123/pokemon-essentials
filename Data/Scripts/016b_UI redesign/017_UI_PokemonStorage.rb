@@ -737,6 +737,7 @@ class UI::PokemonStorageVisuals < UI::BaseVisuals
     ret = UI::PokemonStorageVisualsBox.new(@storage, box_index, @viewport)
     ret.x = 184
     ret.y = 18
+    ret.set_visible_proc(@visible_proc)
     ret.refresh
     return ret
   end
@@ -832,7 +833,7 @@ class UI::PokemonStorageVisuals < UI::BaseVisuals
     @sprites[:cursor].quick_swap_mode = (@sub_mode != :none)
     @visible_proc = nil
     if @sub_mode == :rearrange_items
-      @visible_proc = proc { |pkmn| pkmn.hasItem? }
+      @visible_proc = proc { |pkmn| pkmn&.hasItem? }
     end
     @sprites[:box].set_visible_proc(@visible_proc)
     @sprites[:party_panel].set_visible_proc(@visible_proc)
@@ -2070,8 +2071,8 @@ UIActionHandlers.add(UI::PokemonStorage::SCREEN_ID, :interact_box_name_menu, {
 UIActionHandlers.add(UI::PokemonStorage::SCREEN_ID, :jump_to_box, {
   :effect => proc { |screen|
     new_box = screen.choose_box(_INTL("Jump to which Box?"))
-    next if !new_box || new_box == box
-    (new_box > box) ? screen.visuals.go_to_next_box(new_box) : screen.visuals.go_to_previous_box(new_box)
+    next if !new_box || new_box == screen.box
+    (new_box > screen.box) ? screen.visuals.go_to_next_box(new_box) : screen.visuals.go_to_previous_box(new_box)
   }
 })
 
