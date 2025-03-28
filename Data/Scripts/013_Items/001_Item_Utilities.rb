@@ -780,6 +780,14 @@ end
 #===============================================================================
 def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
   newitemname = GameData::Item.get(item).portion_name
+  puts "Is pkmn.items an array? #{pkmn.items.is_a?(Array)}"
+  puts "Is pkmn.items frozen? #{pkmn.items.frozen?}"
+  puts "Class of pkmn.items: #{pkmn.items.class}"
+  puts "Items before check: #{pkmn.items.inspect}"
+
+  # Ensure pkmn.items is initialized as an array
+  pkmn.items ||= []
+
   if pkmn.egg?
     scene.pbDisplay(_INTL("Eggs can't hold items."))
     return false
@@ -787,39 +795,42 @@ def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
     scene.pbDisplay(_INTL("{1}'s mail must be removed before giving it an item.", pkmn.name))
     return false if !pbTakeItemFromPokemon(pkmn, scene)
   end
-  if pkmn.hasItem?
-    olditemname = pkmn.item.portion_name
-    if newitemname.starts_with_vowel?
-      scene.pbDisplay(_INTL("{1} is already holding an {2}.", pkmn.name, olditemname) + "\1")
-    else
-      scene.pbDisplay(_INTL("{1} is already holding a {2}.", pkmn.name, olditemname) + "\1")
-    end
-    if scene.pbConfirm(_INTL("Would you like to switch the two items?"))
-      $bag.remove(item)
-      if !$bag.add(pkmn.item)
-        raise _INTL("Couldn't re-store deleted item in Bag somehow") if !$bag.add(item)
-        scene.pbDisplay(_INTL("The Bag is full. The Pokémon's item could not be removed."))
-      elsif GameData::Item.get(item).is_mail?
-        if pbWriteMail(item, pkmn, pkmnid, scene)
-          pkmn.item = item
-          scene.pbDisplay(_INTL("Took the {1} from {2} and gave it the {3}.", olditemname, pkmn.name, newitemname))
-          return true
-        elsif !$bag.add(item)
-          raise _INTL("Couldn't re-store deleted item in Bag somehow")
-        end
-      else
-        pkmn.item = item
-        scene.pbDisplay(_INTL("Took the {1} from {2} and gave it the {3}.", olditemname, pkmn.name, newitemname))
+
+  # Check if Pokémon is holding more than the max number of items
+  max_items = 3
+  if pkmn.items.length >= max_items
+    scene.pbDisplay(_INTL("{1} can't hold more than {2} items.", pkmn.name, max_items))
+    return false
+  end
+
+  # If Pokémon is holding an item, ask if the player wants to add or replace an item
+  if pkmn.items.any?
+    held_items = pkmn.items.map { |i| GameData::Item.get(i).portion_name }.join(", ")
+    # Add item only if it's not already held
+    unless pkmn.items.include?(item)
+      if scene.pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
+        puts "Items before adding: #{pkmn.items.inspect}"
+        puts "Attempting to add item: #{item}"
+        puts "Is item valid? #{GameData::Item.exists?(item)}"
+        pkmn.add_item(item)  # Use add_item method here
+        puts "Items after adding: #{pkmn.items.inspect}"
+        $bag.remove(item)
+        scene.pbDisplay(_INTL("{1} is now also holding the {2}.", pkmn.name, newitemname))
         return true
       end
+    else
+      scene.pbDisplay(_INTL("{1} is already holding the {2}.", pkmn.name, newitemname))
+      return false
     end
-  elsif !GameData::Item.get(item).is_mail? || pbWriteMail(item, pkmn, pkmnid, scene)
+  else
+    puts "No items present, entering last else block"
+    puts "Adding item: #{item}"
+    pkmn.add_item(item)  # Use add_item method here
+    puts "Items after adding: #{pkmn.items.inspect}"
     $bag.remove(item)
-    pkmn.item = item
     scene.pbDisplay(_INTL("{1} is now holding the {2}.", pkmn.name, newitemname))
     return true
   end
-  return false
 end
 
 def pbTakeItemFromPokemon(pkmn, scene)
@@ -852,7 +863,6 @@ def pbTakeItemFromPokemon(pkmn, scene)
   end
   return ret
 end
-
 #===============================================================================
 # Choose an item from the Bag
 #===============================================================================

@@ -705,7 +705,7 @@ class PokemonParty_Scene
   def pbSummary(pkmnid, inbattle = false)
     oldsprites = pbFadeOutAndHide(@sprites)
     scene = PokemonSummary_Scene.new
-    screen = PokemonSummaryScreen.new(scene, inbattle)
+    screen = PokemonSummaryScreen.new(scene)
     screen.pbStartScreen(@party, pkmnid)
     yield if block_given?
     pbRefresh
@@ -1327,6 +1327,46 @@ MenuHandlers.add(:party_menu, :summary, {
     end
   }
 })
+
+MenuHandlers.add(:party_menu, :set_ability, {
+  "name"   => _INTL("Set Rune"),
+  "order"     => 11,
+  "parent" => :main,
+  "effect" => proc { |screen, party, party_idx|
+    pkmn = party[party_idx]  # Access the Pokémon from the party by index
+    
+    # Inform the player of the current ability/rune
+    if pkmn.ability
+      msg = _INTL("Rune is {1}.", pkmn.ability.name)
+    else
+      msg = _INTL("No ability (index {1}).", pkmn.ability_index)
+    end
+
+    # Show the message and proceed with setting the rune
+    screen.pbMessage(msg)
+    
+    abils = pkmn.getAbilityList
+    ability_commands = []
+    abil_cmd = 0
+    abils.each do |i|
+      hidden_start_index = pkmn.species_data.abilities.length  # Get where hidden abilities start
+      is_hidden = (i[1] >= hidden_start_index) ? "(H) " : ""  # Only mark actual hidden abilities
+      ability_commands.push("#{is_hidden}#{GameData::Ability.get(i[0]).name}")
+      abil_cmd = ability_commands.length - 1 if pkmn.ability_id == i[0]
+    end
+
+    abil_cmd = screen.pbShowCommands(_INTL("Choose a Rune"), ability_commands, abil_cmd)
+    return if abil_cmd < 0  # Skip if the user cancels
+
+    # Set the ability/rune for the Pokémon
+    pkmn.ability_index = abils[abil_cmd][1]
+    pkmn.ability = nil
+    screen.pbRefreshSingle(party_idx)  # Refresh the party screen
+
+    next false  # Ensure the menu does not close
+  }
+})
+
 
 MenuHandlers.add(:party_menu, :debug, {
   "name"      => _INTL("Debug"),

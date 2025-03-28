@@ -95,6 +95,7 @@ class Battle::Battler
   end
 
   def pbEndTurn(_choice)
+    # Reset each battler's multi-hit tracker at the end of each turn
     @lastRoundMoved = @battle.turnCount   # Done something this round
     if !@effects[PBEffects::ChoiceBand] &&
        (hasActiveItem?([:CHOICEBAND, :CHOICESPECS, :CHOICESCARF]) ||
@@ -451,6 +452,7 @@ class Battle::Battler
         elsif realNumHits > 1
           @battle.pbDisplay(_INTL("Hit {1} times!", realNumHits))
         end
+        reset_multi_hit_tracker
       end
       # Magic Coat's bouncing back (move has targets)
       targets.each do |b|
@@ -604,9 +606,12 @@ class Battle::Battler
         targets.each do |b|
           next if !b.damageState.missed || b.damageState.magicCoat
           pbMissMessage(move, user, b)
-          if user.itemActive?
+          if user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
             Battle::ItemEffects.triggerOnMissingTarget(user.item, user, b, move, hitNum, @battle)
           end
+        end
           break if move.pbRepeatHit?   # Dragon Darts only shows one failure message
         end
         move.pbCrashDamage(user)
@@ -650,9 +655,12 @@ class Battle::Battler
       targets.each do |b|
         next if !b.damageState.missed
         pbMissMessage(move, user, b)
-        if user.itemActive?
+        if user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
           Battle::ItemEffects.triggerOnMissingTarget(user.item, user, b, move, hitNum, @battle)
         end
+      end
       end
     end
     # Deal the damage (to all allies first simultaneously, then all foes

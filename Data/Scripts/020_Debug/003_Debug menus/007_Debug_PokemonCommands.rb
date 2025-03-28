@@ -634,7 +634,9 @@ MenuHandlers.add(:pokemon_debug_menu, :set_ability, {
         ability_commands = []
         abil_cmd = 0
         abils.each do |i|
-          ability_commands.push(((i[1] < 2) ? "" : "(H) ") + GameData::Ability.get(i[0]).name)
+          hidden_start_index = pkmn.species_data.abilities.length  # Get where hidden abilities start
+is_hidden = (i[1] >= hidden_start_index) ? "(H) " : ""  # Only mark actual hidden abilities
+ability_commands.push("#{is_hidden}#{GameData::Ability.get(i[0]).name}")
           abil_cmd = ability_commands.length - 1 if pkmn.ability_id == i[0]
         end
         abil_cmd = screen.pbShowCommands(_INTL("Choose an ability."), ability_commands, abil_cmd)

@@ -120,7 +120,7 @@ class HeldItemIconSprite < Sprite
     self.y = y
     @pokemon = pokemon
     @item = nil
-    self.item = @pokemon.item_id
+    self.item = extract_item(@pokemon.item_ids)
   end
 
   def dispose
@@ -130,16 +130,19 @@ class HeldItemIconSprite < Sprite
 
   def pokemon=(value)
     @pokemon = value
-    self.item = @pokemon.item_id
+    self.item = extract_item(@pokemon.item_ids)
   end
 
   def item=(value)
-    return if @item == value
-    @item = value
+    new_item = extract_item(value)
+    return if @item == new_item  # Prevent redundant updates
+    @item = new_item
     @animbitmap&.dispose
     @animbitmap = nil
+
     if @item
-      @animbitmap = AnimatedBitmap.new(GameData::Item.held_icon_filename(@item))
+      item_icon = "Graphics/UI/icon_item"  # Default icon
+      @animbitmap = AnimatedBitmap.new(item_icon)
       self.bitmap = @animbitmap.bitmap
     else
       self.bitmap = nil
@@ -148,10 +151,18 @@ class HeldItemIconSprite < Sprite
 
   def update
     super
-    self.item = @pokemon.item_id
+    self.item = extract_item(@pokemon.item_ids)
     if @animbitmap
       @animbitmap.update
       self.bitmap = @animbitmap.bitmap
     end
   end
+
+  private
+
+  def extract_item(item_data)
+    return nil if item_data.nil?  # Ensure we handle nil cases
+    return item_data.is_a?(Array) ? item_data.first : item_data
+  end
 end
+

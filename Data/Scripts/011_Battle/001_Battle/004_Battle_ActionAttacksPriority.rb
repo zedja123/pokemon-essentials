@@ -167,9 +167,12 @@ class Battle
             entry[2] = Battle::AbilityEffects.triggerPriorityBracketChange(b.ability, b, self)
           end
           # Items (Quick Claw, Custap Berry, Lagging Tail, Full Incense)
-          if b.itemActive?
+          if b.itemActive?(b.items)
+          b.items.each do |item|  # Iterate over the items array
+          puts "✅ itemActive? is #{item}"
             entry[3] = Battle::ItemEffects.triggerPriorityBracketChange(b.item, b, self)
           end
+        end
         end
         @priority.push(entry)
       end

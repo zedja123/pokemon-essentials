@@ -12,8 +12,9 @@ class Battle::Battler
     @damageState = Battle::DamageState.new
     pbInitBlank
     pbInitEffects(false)
+    @multi_hit_tracker = {}
   end
-
+  
   def pbInitBlank
     @name           = ""
     @species        = 0
@@ -61,34 +62,52 @@ class Battle::Battler
     pbInitPokemon(pkmn, idxParty)
     pbInitEffects(batonPass)
     @damageState.reset
+    
+  # Initialize items by copying the items from the Pokémon
+  if pkmn.items
+    @items = pkmn.items.map { |item| item.dup }  # Clone each item
+  else
+    @items = []  # Ensure items are empty if none exist
+  end
   end
 
-  def pbInitPokemon(pkmn, idxParty)
-    raise _INTL("An egg can't be an active Pokémon.") if pkmn.egg?
-    @name         = pkmn.name
-    @species      = pkmn.species
-    @form         = pkmn.form
-    @level        = pkmn.level
-    @hp           = pkmn.hp
-    @totalhp      = pkmn.totalhp
-    @types        = pkmn.types
-    @ability_id   = pkmn.ability_id
-    @item_id      = pkmn.item_id
-    @attack       = pkmn.attack
-    @defense      = pkmn.defense
-    @spatk        = pkmn.spatk
-    @spdef        = pkmn.spdef
-    @speed        = pkmn.speed
-    @status       = pkmn.status
-    @statusCount  = pkmn.statusCount
-    @pokemon      = pkmn
-    @pokemonIndex = idxParty
-    @participants = []   # Participants earn Exp. if this battler is defeated
-    @moves        = []
-    pkmn.moves.each_with_index do |m, i|
-      @moves[i] = Battle::Move.from_pokemon_move(@battle, m)
-    end
+def pbInitPokemon(pkmn, idxParty)
+  raise _INTL("An egg can't be an active Pokémon.") if pkmn.egg?
+  
+  @name         = pkmn.name
+  @species      = pkmn.species
+  @form         = pkmn.form
+  @level        = pkmn.level
+  @hp           = pkmn.hp
+  @totalhp      = pkmn.totalhp
+  @types        = pkmn.types
+  @ability_id   = pkmn.ability_id
+  
+  # Initialize the items array using item IDs (symbols)
+    # Map the items to their IDs (symbols)
+  @items = pkmn.items.map { |item| item.id }# Ensure you store item IDs
+
+  @attack       = pkmn.attack
+  @defense      = pkmn.defense
+  @spatk        = pkmn.spatk
+  @spdef        = pkmn.spdef
+  @speed        = pkmn.speed
+  @status       = pkmn.status
+  @statusCount  = pkmn.statusCount
+  @pokemon      = pkmn
+  @pokemonIndex = idxParty
+  @participants = []   # Participants earn Exp. if this battler is defeated
+  @moves        = []
+  
+  pkmn.moves.each_with_index do |m, i|
+    @moves[i] = Battle::Move.from_pokemon_move(@battle, m)
+      # Example: Access item and print its effects
+    @items.each_with_index do |item_id, index|
+    item = GameData::Item.get(item_id)  # Fetch the item object from GameData
+    puts "Item ##{index + 1}: #{item.name}"  # Debugging log, print item name
   end
+  end
+end
 
   def pbInitEffects(batonPass)
     if batonPass
@@ -151,6 +170,7 @@ class Battle::Battler
     @battle.allBattlers.each do |b|   # Other battlers no longer attracted to self
       b.effects[PBEffects::Attract] = -1 if b.effects[PBEffects::Attract] == @index
     end
+    @effects[PBEffects::Frost]               = [0, 0] # [Turns remaining, Stack count]
     @effects[PBEffects::BanefulBunker]       = false
     @effects[PBEffects::BeakBlast]           = false
     @effects[PBEffects::Bide]                = 0

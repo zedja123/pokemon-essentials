@@ -7,11 +7,14 @@ class Battle
     pbPriority.each do |b|
       if b.effects[PBEffects::PriorityAbility] && b.abilityActive?
         Battle::AbilityEffects.triggerPriorityBracketUse(b.ability, b, self)
-      elsif b.effects[PBEffects::PriorityItem] && b.itemActive?
+      elsif b.effects[PBEffects::PriorityItem] && b.itemActive?(b.item)  # Check if there are any active items
+        b.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
         Battle::ItemEffects.triggerPriorityBracketUse(b.item, b, self)
       end
     end
   end
+end
 
   def pbAttackPhaseCall
     pbPriority.each do |b|

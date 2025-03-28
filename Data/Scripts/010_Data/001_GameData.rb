@@ -104,15 +104,21 @@ module GameData
       return self::DATA[other]
     end
 
-    # @param other [Symbol, self, String]
-    # @return [self, nil]
-    def try_get(other)
-      return nil if other.nil?
-      validate other => [Symbol, self, String]
-      return other if other.is_a?(self)
-      other = other.to_sym if other.is_a?(String)
-      return (self::DATA.has_key?(other)) ? self::DATA[other] : nil
-    end
+# @param other [Symbol, self, String, Array]
+# @return [self, nil]
+def try_get(other)
+  return nil if other.nil?
+  # If it's an array, validate each element in the array
+  if other.is_a?(Array)
+    other.each { |o| validate o => [Symbol, self, String] }
+    return other.map { |o| o.is_a?(self) ? o : (self::DATA.has_key?(o.to_sym) ? self::DATA[o.to_sym] : nil) }
+  end
+  # Original validation for single element
+  validate other => [Symbol, self, String]
+  return other if other.is_a?(self)
+  other = other.to_sym if other.is_a?(String)
+  return (self::DATA.has_key?(other)) ? self::DATA[other] : nil
+end
 
     # Returns the array of keys for the data.
     # @return [Array]
@@ -190,7 +196,7 @@ module GameData
       return self::DATA.keys
     end
 
-    # Yields all data in numerical order.
+    # Yields all data in numberical order.
     def each
       keys = self::DATA.keys.sort
       keys.each { |key| yield self::DATA[key] }

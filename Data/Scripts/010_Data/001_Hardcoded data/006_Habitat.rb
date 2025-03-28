@@ -74,3 +74,8 @@ GameData::Habitat.register({
   :id   => :Rare,
   :name => _INTL("Rare")
 })
+
+GameData::Habitat.register({
+  :id   => :Rare,
+  :name => _INTL("Freljord")
+})

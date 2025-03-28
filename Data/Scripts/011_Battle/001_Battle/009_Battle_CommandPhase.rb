@@ -262,4 +262,9 @@ class Battle
       break if commandsEnd
     end
   end
+  def pbReorganizeMoves
+  # Call the MoveReorganizeMenu and pass in the Pokémon you want to reorganize
+  menu = MoveReorganizeMenu.new(@pokemon)  # Pass the Pokémon whose moves you want to reorganize
+  menu.display
+end
 end

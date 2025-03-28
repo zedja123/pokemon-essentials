@@ -106,63 +106,87 @@ class Battle
   #=============================================================================
   # Set up all battlers
   #=============================================================================
-  def pbCreateBattler(idxBattler, pkmn, idxParty)
-    if !@battlers[idxBattler].nil?
-      raise _INTL("Battler index {1} already exists", idxBattler)
-    end
-    @battlers[idxBattler] = Battler.new(self, idxBattler)
-    @positions[idxBattler] = ActivePosition.new
-    pbClearChoice(idxBattler)
-    @successStates[idxBattler] = SuccessState.new
-    @battlers[idxBattler].pbInitialize(pkmn, idxParty)
+def pbCreateBattler(idxBattler, pkmn, idxParty)
+  if @battlers[idxBattler].nil?
+    @battlers[idxBattler] = Battle::Battler.new(self, idxBattler)  # Initialize the battler object
   end
+  
+  # Debug logs to verify class and available methods
+  # Initialize positions and other states
+  @positions[idxBattler] = ActivePosition.new
+  pbClearChoice(idxBattler)
+  @successStates[idxBattler] = SuccessState.new
+  battler = @battlers[idxBattler]
+  item_ids = pkmn.items.map { |item| item.id }
+  puts "pkmn Items: #{pkmn.item_ids.inspect}"
+  @battlers[idxBattler].register_items(item_ids)
+  # Debugging: Confirm that the battler's items are correct
+  puts "Battler Items: #{@battlers[idxBattler].items.inspect}"
+  # Initialize the battler's Pokémon data
+  @battlers[idxBattler].pbInitialize(pkmn, idxParty)
+  # Set items for the battler
+end
 
-  def pbSetUpSides
-    ret = [[], []]
-    2.times do |side|
-      # Set up wild Pokémon
-      if side == 1 && wildBattle?
-        pbParty(1).each_with_index do |pkmn, idxPkmn|
-          pbCreateBattler((2 * idxPkmn) + side, pkmn, idxPkmn)
-          # Changes the Pokémon's form upon entering battle (if it should)
-          @peer.pbOnEnteringBattle(self, @battlers[(2 * idxPkmn) + side], pkmn, true)
-          pbSetSeen(@battlers[(2 * idxPkmn) + side])
-          @usedInBattle[side][idxPkmn] = true
-        end
-        next
+def pbSetUpSides
+  ret = [[], []]
+  
+  # Loop through both sides (player and opponent)
+  2.times do |side|
+    # Set up wild Pokémon for side 1 (wild battle)
+    if side == 1 && wildBattle?
+      pbParty(1).each_with_index do |pkmn, idxPkmn|
+        pbCreateBattler((5 * idxPkmn) + side, pkmn, idxPkmn)  # Create battler with 5 Pokémon max
+        # Change the Pokémon's form upon entering battle (if applicable)
+        @peer.pbOnEnteringBattle(self, @battlers[(5 * idxPkmn) + side], pkmn, true)
+        pbSetSeen(@battlers[(5 * idxPkmn) + side])
+        @usedInBattle[side][idxPkmn] = true
       end
-      # Set up player's Pokémon and trainers' Pokémon
-      trainer = (side == 0) ? @player : @opponent
-      requireds = []
-      # Find out how many Pokémon each trainer on side needs to have
-      @sideSizes[side].times do |i|
-        idxTrainer = pbGetOwnerIndexFromBattlerIndex((i * 2) + side)
-        requireds[idxTrainer] = 0 if requireds[idxTrainer].nil?
-        requireds[idxTrainer] += 1
-      end
-      # For each trainer in turn, find the needed number of Pokémon for them to
-      # send out, and initialize them
-      battlerNumber = 0
-      partyOrder = pbPartyOrder(side)
-      starts = pbPartyStarts(side)
-      trainer.each_with_index do |_t, idxTrainer|
-        ret[side][idxTrainer] = []
-        eachInTeam(side, idxTrainer) do |pkmn, idxPkmn|
-          next if !pkmn.able?
-          idxBattler = (2 * battlerNumber) + side
-          pbCreateBattler(idxBattler, pkmn, idxPkmn)
-          ret[side][idxTrainer].push(idxBattler)
-          if idxPkmn != starts[idxTrainer] + battlerNumber
-            idxOther = starts[idxTrainer] + battlerNumber
-            partyOrder[idxPkmn], partyOrder[idxOther] = partyOrder[idxOther], partyOrder[idxPkmn]
-          end
-          battlerNumber += 1
-          break if ret[side][idxTrainer].length >= requireds[idxTrainer]
+      next
+    end
+
+    # Set up player's Pokémon and trainers' Pokémon
+    trainer = (side == 0) ? @player : @opponent
+    requireds = []
+
+    # Find out how many Pokémon each trainer on this side needs to send out
+    @sideSizes[side].times do |i|
+      idxTrainer = pbGetOwnerIndexFromBattlerIndex((i * 2) + side)
+      requireds[idxTrainer] = 0 if requireds[idxTrainer].nil?
+      requireds[idxTrainer] += 1
+    end
+
+    # Initialize each trainer's Pokémon and add them to their respective side
+    battlerNumber = 0
+    partyOrder = pbPartyOrder(side)
+    starts = pbPartyStarts(side)
+    trainer.each_with_index do |_t, idxTrainer|
+      ret[side][idxTrainer] = []
+      
+      # Loop through the Pokémon in the trainer's party and set them up for the battle
+      eachInTeam(side, idxTrainer) do |pkmn, idxPkmn|
+        next if !pkmn.able?  # Only use able Pokémon
+        
+        # Ensure we only set up 5 Pokémon on each side
+        break if battlerNumber >= 5  # Stop after 5 Pokémon
+
+        # Create the battler
+        idxBattler = (5 * battlerNumber) + side
+        pbCreateBattler(idxBattler, pkmn, idxPkmn)
+        ret[side][idxTrainer].push(idxBattler)
+
+        # If this isn't the starting Pokémon, swap positions in the order
+        if idxPkmn != starts[idxTrainer] + battlerNumber
+          idxOther = starts[idxTrainer] + battlerNumber
+          partyOrder[idxPkmn], partyOrder[idxOther] = partyOrder[idxOther], partyOrder[idxPkmn]
         end
+
+        battlerNumber += 1  # Move to the next battler
+        break if ret[side][idxTrainer].length >= requireds[idxTrainer]
       end
     end
-    return ret
   end
+  return ret
+end
 
   #=============================================================================
   # Send out all battlers at the start of battle

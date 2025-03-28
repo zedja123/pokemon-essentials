@@ -382,10 +382,11 @@ end
 # Pokérus, gender/nature forcing because of player's lead Pokémon).
 def pbGenerateWildPokemon(species, level, isRoamer = false)
   genwildpoke = Pokemon.new(species, level)
-  # Give the wild Pokémon a held item
+  # Give the wild Pokémon held items (allow for multiple items)
   items = genwildpoke.wildHoldItems
   first_pkmn = $player.first_pokemon
   chances = [50, 5, 1]
+  
   if first_pkmn
     case first_pkmn.ability_id
     when :COMPOUNDEYES
@@ -394,18 +395,28 @@ def pbGenerateWildPokemon(species, level, isRoamer = false)
       chances = [60, 20, 5] if Settings::MORE_ABILITIES_AFFECT_WILD_ENCOUNTERS
     end
   end
+  
   itemrnd = rand(100)
+  
+  # Assign one or more items from the lists based on chances
+  selected_items = []
   if (items[0] == items[1] && items[1] == items[2]) || itemrnd < chances[0]
-    genwildpoke.item = items[0].sample
+    selected_items = items[0].sample(rand(1..3))  # Randomly sample 1-3 items from items[0]
   elsif itemrnd < (chances[0] + chances[1])
-    genwildpoke.item = items[1].sample
+    selected_items = items[1].sample(rand(1..3))  # Randomly sample 1-3 items from items[1]
   elsif itemrnd < (chances[0] + chances[1] + chances[2])
-    genwildpoke.item = items[2].sample
+    selected_items = items[2].sample(rand(1..3))  # Randomly sample 1-3 items from items[2]
   end
-  # Improve chances of shiny Pokémon with Shiny Charm and battling more of the
-  # same species
+  
+  # Add each selected item to the Pokémon's item array
+  selected_items.each do |item|
+    genwildpoke.add_item(item) unless genwildpoke.items.include?(item)
+  end
+
+  # Improve chances of shiny Pokémon with Shiny Charm and battling more of the same species
   shiny_retries = 0
   shiny_retries += 2 if $bag.has?(:SHINYCHARM)
+  
   if Settings::HIGHER_SHINY_CHANCES_WITH_NUMBER_BATTLED
     values = [0, 0]
     case $player.pokedex.battled_count(species)
@@ -418,6 +429,7 @@ def pbGenerateWildPokemon(species, level, isRoamer = false)
     end
     shiny_retries += values[0] if values[1] > 0 && rand(1000) < values[1]
   end
+  
   if shiny_retries > 0
     shiny_retries.times do
       break if genwildpoke.shiny?
@@ -425,10 +437,11 @@ def pbGenerateWildPokemon(species, level, isRoamer = false)
       genwildpoke.personalID = rand(2**16) | (rand(2**16) << 16)
     end
   end
+
   # Give Pokérus
   genwildpoke.givePokerus if rand(65_536) < Settings::POKERUS_CHANCE
-  # Change wild Pokémon's gender/nature depending on the lead party Pokémon's
-  # ability
+  
+  # Change wild Pokémon's gender/nature depending on the lead party Pokémon's ability
   if first_pkmn
     if first_pkmn.hasAbility?(:CUTECHARM) && !genwildpoke.singleGendered?
       if first_pkmn.male?
@@ -442,12 +455,12 @@ def pbGenerateWildPokemon(species, level, isRoamer = false)
       end
     end
   end
+  
   # Trigger events that may alter the generated Pokémon further
-  genwildpoke.form_simple = genwildpoke.form if MultipleForms.hasFunction?(genwildpoke.species, "getForm")
   EventHandlers.trigger(:on_wild_pokemon_created, genwildpoke)
+  
   return genwildpoke
 end
-
 # Used by fishing rods and Headbutt/Rock Smash/Sweet Scent to generate a wild
 # Pokémon (or two if it's Sweet Scent) for a triggered wild encounter.
 def pbEncounter(enc_type, only_single = true)

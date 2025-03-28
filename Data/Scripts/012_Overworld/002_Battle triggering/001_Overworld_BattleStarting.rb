@@ -132,6 +132,15 @@ def pbCanTripleBattle?
   return $PokemonGlobal.partner && $player.able_pokemon_count >= 2
 end
 
+def pbCanQuadrupleBattle?
+  return true if $player.able_pokemon_count >= 4
+  return $PokemonGlobal.partner && $player.able_pokemon_count >= 3
+end
+def pbCanQuintupleBattle?
+  return true if $player.able_pokemon_count >= 5
+  return $PokemonGlobal.partner && $player.able_pokemon_count >= 4
+end
+
 #===============================================================================
 # Helper methods for setting up and closing down battles
 #===============================================================================
@@ -189,8 +198,7 @@ module BattleCreationHelperMethods
       ally = NPCTrainer.new($PokemonGlobal.partner[1], $PokemonGlobal.partner[0])
       ally.id    = $PokemonGlobal.partner[2]
       ally.party = $PokemonGlobal.partner[3]
-      data = GameData::Trainer.try_get($PokemonGlobal.partner[0], $PokemonGlobal.partner[1], $PokemonGlobal.partner[2])
-      ally_items[1] = data&.items.clone || []
+      ally_items[1] = ally.items.clone
       trainer_array.push(ally)
       pokemon_array = []
       $player.party.each { |pkmn| pokemon_array.push(pkmn) }

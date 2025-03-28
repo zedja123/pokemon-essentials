@@ -42,9 +42,12 @@ class Battle
     if battler.abilityActive? && Battle::AbilityEffects.triggerCertainSwitching(battler.ability, battler, self)
       return true
     end
-    if battler.itemActive? && Battle::ItemEffects.triggerCertainSwitching(battler.item, battler, self)
+    if battler.itemActive?(battler.items)  # Check if there are any active items
+        battler.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}" && Battle::ItemEffects.triggerCertainSwitching(item, battler, self)
       return true
     end
+  end
     # Other certain switching effects
     return true if Settings::MORE_TYPE_EFFECTS && battler.pbHasType?(:GHOST)
     # Other certain trapping effects
@@ -61,11 +64,14 @@ class Battle
       end
     end
     allOtherSideBattlers(idxBattler).each do |b|
-      next if !b.itemActive?
-      if Battle::ItemEffects.triggerTrappingByTarget(b.item, battler, b, self)
-        partyScene&.pbDisplay(_INTL("{1}'s {2} prevents switching!", b.pbThis, b.itemName))
+      if b.itemActive?(b.items)  # Check if there are any active items
+      b.items.each do |item|  # Iterate over the items array
+      puts "✅ itemActive? is #{item}"  # Check if there are any active items
+      Battle::ItemEffects.triggerTrappingByTarget(item, battler, b, self)
+        partyScene&.pbDisplay(_INTL("{1}'s {2} prevents switching!", b.pbThis, item.name))
         return false
       end
+    end
     end
     return true
   end
@@ -354,9 +360,13 @@ class Battle
       end
       pbEndPrimordialWeather   # Checking this again just in case
       # Items that trigger upon switching in (Air Balloon message)
-      if b.itemActive?
-        Battle::ItemEffects.triggerOnSwitchIn(b.item, b, self)
+      if b.itemActive?(b.item)  # Check if there are any active items
+        b.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+
+        Battle::ItemEffects.triggerOnSwitchIn(item, b, self)
       end
+    end
       # Berry check, status-curing ability check
       b.pbHeldItemTriggerCheck
       b.pbAbilityStatusCureCheck

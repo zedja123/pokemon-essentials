@@ -36,7 +36,9 @@
 #           class Game_Temp
 #             def add_battle_rule
 #       (There is no guarantee that this list is complete.)
-
+#===============================================================================
+#
+#===============================================================================
 class Battle
   attr_reader   :scene            # Scene object for this battle
   attr_reader   :peer
@@ -89,7 +91,6 @@ class Battle
   attr_reader   :endOfRound       # True during the end of round
   attr_accessor :moldBreaker      # True if Mold Breaker applies
   attr_reader   :struggle         # The Struggle move
-
   def pbRandom(x); return rand(x); end
 
   #=============================================================================
@@ -101,6 +102,7 @@ class Battle
     elsif p2.length == 0
       raise ArgumentError.new(_INTL("Party 2 has no Pokémon."))
     end
+    @sprites ||= {}
     @scene             = scene
     @peer              = Peer.new
     @field             = ActiveField.new    # Whole field (gravity/rooms)
@@ -148,10 +150,10 @@ class Battle
       [-1] * (@player ? @player.length : 1),
       [-1] * (@opponent ? @opponent.length : 1)
     ]
-    @initialItems      = [
-      Array.new(@party1.length) { |i| (@party1[i]) ? @party1[i].item_id : nil },
-      Array.new(@party2.length) { |i| (@party2[i]) ? @party2[i].item_id : nil }
-    ]
+    @initialItems = [
+      Array.new(@party1.length) { |i| (@party1[i]) ? @party1[i].items : [] },  # Default to an empty array if no items
+      Array.new(@party2.length) { |i| (@party2[i]) ? @party2[i].items : [] }   # Default to an empty array if no items
+    ] 
     @recycleItems      = [Array.new(@party1.length, nil),   Array.new(@party2.length, nil)]
     @belch             = [Array.new(@party1.length, false), Array.new(@party2.length, false)]
     @battleBond        = [Array.new(@party1.length, false), Array.new(@party2.length, false)]
@@ -171,6 +173,11 @@ class Battle
     @mega_rings        = []
     GameData::Item.each { |item| @mega_rings.push(item.id) if item.has_flag?("MegaRing") }
     @battleAI          = AI.new(self)
+    @sprites["movepresel"] = MoveSelectionSprite.new(@viewport)
+    @sprites["movepresel"].visible = false  # Initially hidden
+    @sprites["movepresel"].preselected = true  # Indicates it's for preselection
+    @sprites["movesel"] = MoveSelectionSprite.new(@viewport)
+    @sprites["movesel"].visible = false  # Initially hidden
   end
 
   #=============================================================================
@@ -185,6 +192,7 @@ class Battle
   def setBattleMode(mode)
     @sideSizes =
       case mode
+      when "5v5"           then [5, 5]
       when "triple", "3v3" then [3, 3]
       when "3v2"           then [3, 2]
       when "3v1"           then [3, 1]
@@ -502,44 +510,88 @@ class Battle
   # Used when choosing a target and pressing up/down to move the cursor to the
   # opposite side, and also when deciding which target to select first for some
   # moves.
-  def pbGetOpposingIndicesInOrder(idxBattler)
-    case pbSideSize(0)
-    when 1
-      case pbSideSize(1)
-      when 1   # 1v1 single
-        return [0] if opposes?(idxBattler)
-        return [1]
-      when 2   # 1v2
-        return [0] if opposes?(idxBattler)
-        return [3, 1]
-      when 3   # 1v3
-        return [0] if opposes?(idxBattler)
-        return [3, 5, 1]
-      end
-    when 2
-      case pbSideSize(1)
-      when 1   # 2v1
-        return [0, 2] if opposes?(idxBattler)
-        return [1]
-      when 2   # 2v2 double
-        return [[3, 1], [2, 0], [1, 3], [0, 2]][idxBattler]
-      when 3   # 2v3
-        return [[5, 3, 1], [2, 0], [3, 1, 5]][idxBattler] if idxBattler < 3
-        return [0, 2]
-      end
-    when 3
-      case pbSideSize(1)
-      when 1   # 3v1
-        return [2, 0, 4] if opposes?(idxBattler)
-        return [1]
-      when 2   # 3v2
-        return [[3, 1], [2, 4, 0], [3, 1], [2, 0, 4], [1, 3]][idxBattler]
-      when 3   # 3v3 triple
-        return [[5, 3, 1], [4, 2, 0], [3, 5, 1], [2, 0, 4], [1, 3, 5], [0, 2, 4]][idxBattler]
-      end
+def pbGetOpposingIndicesInOrder(idxBattler)
+  case pbSideSize(0)
+  when 1
+    case pbSideSize(1)
+    when 1   # 1v1 single
+      return [0] if opposes?(idxBattler)
+      return [1]
+    when 2   # 1v2
+      return [0] if opposes?(idxBattler)
+      return [3, 1]
+    when 3   # 1v3
+      return [0] if opposes?(idxBattler)
+      return [3, 5, 1]
+    when 4   # 1v4
+      return [0] if opposes?(idxBattler)
+      return [3, 5, 7, 9]
+    when 5   # 1v5
+      return [0] if opposes?(idxBattler)
+      return [5, 7, 9, 11, 13]
     end
-    return [idxBattler]
+  when 2
+    case pbSideSize(1)
+    when 1   # 2v1
+      return [0, 2] if opposes?(idxBattler)
+      return [1]
+    when 2   # 2v2 double
+      return [[3, 1], [2, 0], [1, 3], [0, 2]][idxBattler]
+    when 3   # 2v3
+      return [[5, 3, 1], [2, 0], [3, 1, 5]][idxBattler] if idxBattler < 3
+      return [0, 2]
+    when 4   # 2v4
+      return [[7, 5, 3, 1], [9, 7, 5, 3], [11, 9, 7, 5], [13, 11, 9, 7], [15, 13, 11, 9]][idxBattler]
+    when 5   # 2v5
+      return [[7, 5, 3, 1], [9, 7, 5, 3], [11, 9, 7, 5], [13, 11, 9, 7], [15, 13, 11, 9], [17, 15, 13, 11]][idxBattler]
+    end
+  when 3
+    case pbSideSize(1)
+    when 1   # 3v1
+      return [2, 0, 4] if opposes?(idxBattler)
+      return [1]
+    when 2   # 3v2
+      return [[3, 1], [2, 4, 0], [3, 1], [2, 0, 4], [1, 3]][idxBattler]
+    when 3   # 3v3 triple
+      return [[5, 3, 1], [4, 2, 0], [3, 5, 1], [2, 0, 4], [1, 3, 5], [0, 2, 4]][idxBattler]
+    when 4   # 3v4
+      return [[7, 5, 3, 1], [9, 7, 5, 3], [11, 9, 7, 5], [13, 11, 9, 7], [15, 13, 11, 9], [17, 15, 13, 11], [19, 17, 15, 13]][idxBattler]
+    when 5   # 3v5
+      return [[7, 5, 3, 1], [9, 7, 5, 3], [11, 9, 7, 5], [13, 11, 9, 7], [15, 13, 11, 9], [17, 15, 13, 11], [19, 17, 15, 13]][idxBattler]
+    end
+  when 4
+    case pbSideSize(1)
+    when 1   # 4v1
+      return [0, 2, 4, 6] if opposes?(idxBattler)
+      return [1]
+    when 2   # 4v2
+      return [[7, 5], [9, 7], [11, 9], [13, 11], [15, 13]][idxBattler]
+    when 3   # 4v3
+      return [[7, 5, 3], [9, 7, 5], [11, 9, 7], [13, 11, 9], [15, 13, 11], [17, 15, 13], [19, 17, 15]][idxBattler]
+    when 4   # 4v4
+      return [[10, 8, 6, 4], [11, 9, 7, 5], [12, 10, 8, 6], [13, 11, 9, 7], [14, 12, 10, 8], [15, 13, 11, 9], [16, 14, 12, 10], [17, 15, 13, 11]][idxBattler]
+    when 5   # 4v5
+      return [[10, 8, 6, 4], [11, 9, 7, 5], [12, 10, 8, 6], [13, 11, 9, 7], [14, 12, 10, 8], [15, 13, 11, 9], [16, 14, 12, 10], [17, 15, 13, 11], [18, 16, 14, 12]][idxBattler]
+    end
+  when 5
+    case pbSideSize(1)
+    when 1   # 5v1
+      return [0, 2, 4, 6, 8] if opposes?(idxBattler)
+      return [1]
+    when 2   # 5v2
+      return [[7, 5], [9, 7], [11, 9], [13, 11], [15, 13]][idxBattler]
+    when 3   # 5v3
+      return [[5, 7, 9], [3, 5, 7], [1, 3, 5], [9, 11, 13], [7, 9, 11], [5, 7, 9]][idxBattler]
+    when 4   # 5v4
+      return [[10, 8, 6, 4, 2], [11, 9, 7, 5, 3], [12, 10, 8, 6, 4], [13, 11, 9, 7, 5], [14, 12, 10, 8, 6],
+              [15, 13, 11, 9, 7], [16, 14, 12, 10, 8], [17, 15, 13, 11, 9], [18, 16, 14, 12, 10]][idxBattler]
+    when 5   # 5v5 (main case)
+      return [[10, 8, 6, 4, 2], [11, 9, 7, 5, 3], [12, 10, 8, 6, 4], [13, 11, 9, 7, 5], [14, 12, 10, 8, 6],
+              [15, 13, 11, 9, 7], [16, 14, 12, 10, 8], [17, 15, 13, 11, 9], [18, 16, 14, 12, 10]][idxBattler]
+    end
   end
+  return [idxBattler]
+end
 
   #=============================================================================
   # Comparing the positions of two battlers
@@ -550,31 +602,52 @@ class Battle
     return (idxBattler1 & 1) != (idxBattler2 & 1)
   end
 
-  def nearBattlers?(idxBattler1, idxBattler2)
-    return false if idxBattler1 == idxBattler2
-    return true if pbSideSize(0) <= 2 && pbSideSize(1) <= 2
-    # Get all pairs of battler positions that are not close to each other
-    pairsArray = [[0, 4], [1, 5]]   # Covers 3v1 and 1v3
-    case pbSideSize(0)
-    when 3
-      case pbSideSize(1)
-      when 3   # 3v3 (triple)
-        pairsArray.push([0, 1])
-        pairsArray.push([4, 5])
-      when 2   # 3v2
-        pairsArray.push([0, 1])
-        pairsArray.push([3, 4])
-      end
-    when 2       # 2v3
+def nearBattlers?(idxBattler1, idxBattler2)
+  return false if idxBattler1 == idxBattler2
+
+  # Handling smaller team sizes (1v1, 1v2, etc.)
+  return true if pbSideSize(0) <= 2 && pbSideSize(1) <= 2
+
+  # Initialize an empty array for storing battle pairs
+  pairsArray = []
+
+  # Handle 4v4 and 5v5
+  case pbSideSize(0)
+  when 4   # 4v4
+    case pbSideSize(1)
+    when 4   # 4v4
       pairsArray.push([0, 1])
-      pairsArray.push([2, 5])
+      pairsArray.push([2, 3])
+      pairsArray.push([4, 5])
+    when 5   # 4v5
+      pairsArray.push([0, 1])
+      pairsArray.push([2, 3])
+      pairsArray.push([4, 5])
+      pairsArray.push([6, 7])
     end
-    # See if any pair matches the two battlers being assessed
-    pairsArray.each do |pair|
-      return false if pair.include?(idxBattler1) && pair.include?(idxBattler2)
+  when 5   # 5v5
+    case pbSideSize(1)
+    when 4   # 5v4
+      pairsArray.push([0, 1])
+      pairsArray.push([2, 3])
+      pairsArray.push([4, 5])
+      pairsArray.push([6, 7])
+    when 5   # 5v5
+      pairsArray.push([0, 1])
+      pairsArray.push([2, 3])
+      pairsArray.push([4, 5])
+      pairsArray.push([6, 7])
+      pairsArray.push([8, 9])
     end
-    return true
   end
+
+  # Check if the two battlers are part of any close pairs
+  pairsArray.each do |pair|
+    return false if pair.include?(idxBattler1) && pair.include?(idxBattler2)
+  end
+
+  return true
+end
 
   #=============================================================================
   # Altering a party or rearranging battlers
@@ -708,10 +781,15 @@ class Battle
     return if @field.weather == newWeather
     @field.weather = newWeather
     duration = (fixedDuration) ? 5 : -1
-    if duration > 0 && user && user.itemActive?
+    if duration > 0 && user && user.itemActive?(user.items)  # Check if there are any active items
+
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+
       duration = Battle::ItemEffects.triggerWeatherExtender(user.item, @field.weather,
                                                             duration, user, self)
     end
+  end
     @field.weatherDuration = duration
     weather_data = GameData::BattleWeather.try_get(@field.weather)
     pbCommonAnimation(weather_data.animation) if showAnim && weather_data
@@ -732,7 +810,6 @@ class Battle
   end
 
   def pbEndPrimordialWeather
-    return if @field.weather == @field.defaultWeather
     oldWeather = @field.weather
     # End Primordial Sea, Desolate Land, Delta Stream
     case @field.weather
@@ -787,10 +864,15 @@ class Battle
     return if @field.terrain == newTerrain
     @field.terrain = newTerrain
     duration = (fixedDuration) ? 5 : -1
-    if duration > 0 && user && user.itemActive?
+    if duration > 0 && user && user.itemActive?(user.items)  # Check if there are any active items
+
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+
       duration = Battle::ItemEffects.triggerTerrainExtender(user.item, newTerrain,
                                                             duration, user, self)
     end
+  end
     @field.terrainDuration = duration
     terrain_data = GameData::BattleTerrain.try_get(@field.terrain)
     pbCommonAnimation(terrain_data.animation) if terrain_data
@@ -864,4 +946,99 @@ class Battle
     return if !Scene::USE_ABILITY_SPLASH
     @scene.pbReplaceAbilitySplash(battler)
   end
+  
+  def applyMovesInBattle
+  if @battle && @battle.battlers.include?(@pokemon)
+    battler = @battle.battlers.find { |b| b.pokemon == @pokemon }
+    if battler
+      battler.pokemon.moves = @pokemon.moves.clone  # Apply the saved moves
+    end
+  end
+end
+
+def pbMoveSelection
+  @sprites["movesel"].visible = true
+  @sprites["movesel"].index = 0
+  selmove = 0
+  oldselmove = 0
+  switching = false
+  drawSelectedMove(nil, @pokemon.moves[selmove])  # Display the current move
+
+  loop do
+    Graphics.update
+    Input.update
+    pbUpdate
+
+    # Update sprites
+    if @sprites["movepresel"].index == @sprites["movesel"].index
+      @sprites["movepresel"].z = @sprites["movesel"].z + 1
+    else
+      @sprites["movepresel"].z = @sprites["movesel"].z
+    end
+
+    # Input to go back
+    if Input.trigger?(Input::BACK)
+      (switching) ? pbPlayCancelSE : pbPlayCloseMenuSE
+      break if !switching
+      @sprites["movepresel"].visible = false
+      switching = false
+    # Input to confirm move selection or swapping
+    elsif Input.trigger?(Input::USE)
+      pbPlayDecisionSE
+      if selmove == Pokemon::MAX_MOVES
+        break if !switching
+        @sprites["movepresel"].visible = false
+        switching = false
+      elsif !@pokemon.shadowPokemon?
+        if switching
+          # Swap the moves
+          tmpmove = @pokemon.moves[oldselmove]
+          @pokemon.moves[oldselmove] = @pokemon.moves[selmove]
+          @pokemon.moves[selmove] = tmpmove
+          @modified_moves = @pokemon.moves.clone
+          @sprites["movepresel"].visible = false
+          switching = false
+          drawSelectedMove(nil, @pokemon.moves[selmove])
+        else
+          # Start move selection for swapping
+          @sprites["movepresel"].index = selmove
+          @sprites["movepresel"].visible = true
+          oldselmove = selmove
+          switching = true
+        end
+      end
+    # Input to move up
+    elsif Input.trigger?(Input::UP)
+      selmove -= 1
+      if selmove < 0
+        selmove = Pokemon::MAX_MOVES - 1
+      end
+      @sprites["movesel"].index = selmove
+      pbPlayCursorSE
+      drawSelectedMove(nil, @pokemon.moves[selmove])
+    # Input to move down
+    elsif Input.trigger?(Input::DOWN)
+      selmove += 1
+      if selmove >= Pokemon::MAX_MOVES
+        selmove = 0
+      end
+      @sprites["movesel"].index = selmove
+      pbPlayCursorSE
+      drawSelectedMove(nil, @pokemon.moves[selmove])
+    end
+  end
+
+  @sprites["movesel"].visible = false  # Hide the move selector when done
+    if @battle && @battle.battlers.include?(@pokemon)
+    # Update move information within the battle context
+    @battle.battlers.each do |battler|
+      if battler.pokemon == @pokemon
+        battler.moves = @pokemon.moves  # Update the moves for the battler in the battle
+      end
+    end
+end
+  if Input::Z
+    pbMoveSelection(battler)
+  end
+end
 end

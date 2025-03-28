@@ -453,7 +453,7 @@ Battle::ItemEffects::OnStatLoss.add(:EJECTPACK,
     next false if !battle.pbCanSwitchOut?(battler.index)   # Battler can't switch out
     next false if !battle.pbCanChooseNonActive?(battler.index)   # No Pokémon can switch in
     battle.pbCommonAnimation("UseItem", battler)
-    battle.pbDisplay(_INTL("{1} is switched out by the {2}!", battler.pbThis, battler.itemName))
+    battle.pbDisplay(_INTL("{1} is switched out by the {2}!", battler.pbThis, item.name))
     battler.pbConsumeItem(true, false)
     if battle.endOfRound   # Just switch out
       battle.scene.pbRecall(battler.index) if !battler.fainted?
@@ -658,7 +658,7 @@ Battle::ItemEffects::PriorityBracketChange.add(:QUICKCLAW,
 Battle::ItemEffects::PriorityBracketUse.add(:CUSTAPBERRY,
   proc { |item, battler, battle|
     battle.pbCommonAnimation("EatBerry", battler)
-    battle.pbDisplay(_INTL("{1}'s {2} let it move first!", battler.pbThis, battler.itemName))
+    battle.pbDisplay(_INTL("{1}'s {2} let it move first!", battler.pbThis, item.name))
     battler.pbConsumeItem
   }
 )
@@ -666,7 +666,7 @@ Battle::ItemEffects::PriorityBracketUse.add(:CUSTAPBERRY,
 Battle::ItemEffects::PriorityBracketUse.add(:QUICKCLAW,
   proc { |item, battler, battle|
     battle.pbCommonAnimation("UseItem", battler)
-    battle.pbDisplay(_INTL("{1}'s {2} let it move first!", battler.pbThis, battler.itemName))
+    battle.pbDisplay(_INTL("{1}'s {2} let it move first!", battler.pbThis, item.name))
   }
 )
 
@@ -680,8 +680,8 @@ Battle::ItemEffects::OnMissingTarget.add(:BLUNDERPOLICY,
     next if ["OHKO", "OHKOIce", "OHKOHitsUndergroundTarget"].include?(move.function_code)
     next if !user.pbCanRaiseStatStage?(:SPEED, user)
     battle.pbCommonAnimation("UseItem", user)
-    user.pbRaiseStatStageByCause(:SPEED, 2, user, user.itemName)
-    battle.pbDisplay(_INTL("The {1} was used up...", user.itemName))
+    user.pbRaiseStatStageByCause(:SPEED, 2, user, item)
+    battle.pbDisplay(_INTL("The {1} was used up...", item))
     user.pbHeldItemTriggered(item)
   }
 )
@@ -1274,14 +1274,14 @@ Battle::ItemEffects::OnBeingHit.add(:ABSORBBULB,
     next if move.calcType != :WATER
     next if !target.pbCanRaiseStatStage?(:SPECIAL_ATTACK, target)
     battle.pbCommonAnimation("UseItem", target)
-    target.pbRaiseStatStageByCause(:SPECIAL_ATTACK, 1, target, target.itemName)
+    target.pbRaiseStatStageByCause(:SPECIAL_ATTACK, 1, target, item)
     target.pbHeldItemTriggered(item)
   }
 )
 
 Battle::ItemEffects::OnBeingHit.add(:AIRBALLOON,
   proc { |item, user, target, move, battle|
-    battle.pbDisplay(_INTL("{1}'s {2} popped!", target.pbThis, target.itemName))
+    battle.pbDisplay(_INTL("{1}'s {2} popped!", target.pbThis, item.name))
     target.pbConsumeItem(false, true)
     target.pbSymbiosis
   }
@@ -1292,7 +1292,7 @@ Battle::ItemEffects::OnBeingHit.add(:CELLBATTERY,
     next if move.calcType != :ELECTRIC
     next if !target.pbCanRaiseStatStage?(:ATTACK, target)
     battle.pbCommonAnimation("UseItem", target)
-    target.pbRaiseStatStageByCause(:ATTACK, 1, target, target.itemName)
+    target.pbRaiseStatStageByCause(:ATTACK, 1, target, item)
     target.pbHeldItemTriggered(item)
   }
 )
@@ -1325,7 +1325,7 @@ Battle::ItemEffects::OnBeingHit.add(:JABOCABERRY,
     battle.scene.pbDamageAnimation(user)
     user.pbReduceHP(amt, false)
     battle.pbDisplay(_INTL("{1} consumed its {2} and hurt {3}!", target.pbThis,
-       target.itemName, user.pbThis(true)))
+       item, user.pbThis(true)))
     target.pbHeldItemTriggered(item)
   }
 )
@@ -1349,7 +1349,7 @@ Battle::ItemEffects::OnBeingHit.add(:LUMINOUSMOSS,
     next if move.calcType != :WATER
     next if !target.pbCanRaiseStatStage?(:SPECIAL_DEFENSE, target)
     battle.pbCommonAnimation("UseItem", target)
-    target.pbRaiseStatStageByCause(:SPECIAL_DEFENSE, 1, target, target.itemName)
+    target.pbRaiseStatStageByCause(:SPECIAL_DEFENSE, 1, target, item)
     target.pbHeldItemTriggered(item)
   }
 )
@@ -1374,7 +1374,7 @@ Battle::ItemEffects::OnBeingHit.add(:ROCKYHELMET,
     next if !user.takesIndirectDamage?
     battle.scene.pbDamageAnimation(user)
     user.pbReduceHP(user.totalhp / 6, false)
-    battle.pbDisplay(_INTL("{1} was hurt by the {2}!", user.pbThis, target.itemName))
+    battle.pbDisplay(_INTL("{1} was hurt by the {2}!", user.pbThis, item.name))
   }
 )
 
@@ -1395,7 +1395,7 @@ Battle::ItemEffects::OnBeingHit.add(:ROWAPBERRY,
     battle.scene.pbDamageAnimation(user)
     user.pbReduceHP(amt, false)
     battle.pbDisplay(_INTL("{1} consumed its {2} and hurt {3}!", target.pbThis,
-       target.itemName, user.pbThis(true)))
+       item, user.pbThis(true)))
     target.pbHeldItemTriggered(item)
   }
 )
@@ -1405,7 +1405,7 @@ Battle::ItemEffects::OnBeingHit.add(:SNOWBALL,
     next if move.calcType != :ICE
     next if !target.pbCanRaiseStatStage?(:ATTACK, target)
     battle.pbCommonAnimation("UseItem", target)
-    target.pbRaiseStatStageByCause(:ATTACK, 1, target, target.itemName)
+    target.pbRaiseStatStageByCause(:ATTACK, 1, target, item)
     target.pbHeldItemTriggered(item)
   }
 )
@@ -1423,7 +1423,7 @@ Battle::ItemEffects::OnBeingHit.add(:STICKYBARB,
       target.setInitialItem(nil)
     end
     battle.pbDisplay(_INTL("{1}'s {2} was transferred to {3}!",
-       target.pbThis, user.itemName, user.pbThis(true)))
+       target.pbThis, item, user.pbThis(true)))
   }
 )
 
@@ -1436,13 +1436,13 @@ Battle::ItemEffects::OnBeingHit.add(:WEAKNESSPOLICY,
     battle.pbCommonAnimation("UseItem", target)
     showAnim = true
     if target.pbCanRaiseStatStage?(:ATTACK, target)
-      target.pbRaiseStatStageByCause(:ATTACK, 2, target, target.itemName, showAnim)
+      target.pbRaiseStatStageByCause(:ATTACK, 2, target, item, showAnim)
       showAnim = false
     end
     if target.pbCanRaiseStatStage?(:SPECIAL_ATTACK, target)
-      target.pbRaiseStatStageByCause(:SPECIAL_ATTACK, 2, target, target.itemName, showAnim)
+      target.pbRaiseStatStageByCause(:SPECIAL_ATTACK, 2, target, item, showAnim)
     end
-    battle.pbDisplay(_INTL("The {1} was used up...", target.itemName))
+    battle.pbDisplay(_INTL("The {1} was used up...", item))
     target.pbHeldItemTriggered(item)
   }
 )
@@ -1528,7 +1528,7 @@ Battle::ItemEffects::AfterMoveUseFromTarget.add(:EJECTBUTTON,
     next if battle.pbAllFainted?(battler.idxOpposingSide)
     next if !battle.pbCanChooseNonActive?(battler.index)
     battle.pbCommonAnimation("UseItem", battler)
-    battle.pbDisplay(_INTL("{1} is switched out with the {2}!", battler.pbThis, battler.itemName))
+    battle.pbDisplay(_INTL("{1} is switched out with the {2}!", battler.pbThis, item.name))
     battler.pbConsumeItem(true, false)
     newPkmn = battle.pbGetReplacementPokemonIndex(battler.index)   # Owner chooses
     next if newPkmn < 0
@@ -1547,7 +1547,7 @@ Battle::ItemEffects::AfterMoveUseFromTarget.add(:REDCARD,
     next if newPkmn < 0
     battle.pbCommonAnimation("UseItem", battler)
     battle.pbDisplay(_INTL("{1} held up its {2} against {3}!",
-       battler.pbThis, battler.itemName, user.pbThis(true)))
+       battler.pbThis, item, user.pbThis(true)))
     battler.pbConsumeItem
     if user.hasActiveAbility?(:SUCTIONCUPS) && !battle.moldBreaker
       battle.pbShowAbilitySplash(user)
@@ -1586,7 +1586,7 @@ Battle::ItemEffects::AfterMoveUseFromUser.add(:LIFEORB,
       break if hitBattler
     end
     next if !hitBattler
-    PBDebug.log("[Item triggered] #{user.pbThis}'s #{user.itemName} (recoil)")
+    PBDebug.log("[Item triggered] #{user.pbThis}'s #{item} (recoil)")
     user.pbReduceHP(user.totalhp / 10)
     battle.pbDisplay(_INTL("{1} lost some of its HP!", user.pbThis))
     user.pbItemHPHealCheck
@@ -1605,7 +1605,7 @@ Battle::ItemEffects::AfterMoveUseFromUser.add(:SHELLBELL,
     next if totalDamage <= 0
     user.pbRecoverHP(totalDamage / 8)
     battle.pbDisplay(_INTL("{1} restored a little HP using its {2}!",
-       user.pbThis, user.itemName))
+       user.pbThis, item.name))
   }
 )
 
@@ -1838,11 +1838,11 @@ Battle::ItemEffects::EndOfRoundHealing.add(:BLACKSLUDGE,
       battle.pbCommonAnimation("UseItem", battler)
       battler.pbRecoverHP(battler.totalhp / 16)
       battle.pbDisplay(_INTL("{1} restored a little HP using its {2}!",
-         battler.pbThis, battler.itemName))
+         battler.pbThis, item.name))
     elsif battler.takesIndirectDamage?
       battle.pbCommonAnimation("UseItem", battler)
       battler.pbTakeEffectDamage(battler.totalhp / 8) do |hp_lost|
-        battle.pbDisplay(_INTL("{1} is hurt by its {2}!", battler.pbThis, battler.itemName))
+        battle.pbDisplay(_INTL("{1} is hurt by its {2}!", battler.pbThis, item.name))
       end
     end
   }
@@ -1854,7 +1854,7 @@ Battle::ItemEffects::EndOfRoundHealing.add(:LEFTOVERS,
     battle.pbCommonAnimation("UseItem", battler)
     battler.pbRecoverHP(battler.totalhp / 16)
     battle.pbDisplay(_INTL("{1} restored a little HP using its {2}!",
-       battler.pbThis, battler.itemName))
+       battler.pbThis, item.name))
   }
 )
 
@@ -1865,7 +1865,7 @@ Battle::ItemEffects::EndOfRoundHealing.add(:LEFTOVERS,
 Battle::ItemEffects::EndOfRoundEffect.add(:FLAMEORB,
   proc { |item, battler, battle|
     next if !battler.pbCanBurn?(battler, false)
-    battler.pbBurn(nil, _INTL("{1} was burned by the {2}!", battler.pbThis, battler.itemName))
+    battler.pbBurn(nil, _INTL("{1} was burned by the {2}!", battler.pbThis, item.name))
   }
 )
 
@@ -1874,7 +1874,7 @@ Battle::ItemEffects::EndOfRoundEffect.add(:STICKYBARB,
     next if !battler.takesIndirectDamage?
     battle.scene.pbDamageAnimation(battler)
     battler.pbTakeEffectDamage(battler.totalhp / 8, false) do |hp_lost|
-      battle.pbDisplay(_INTL("{1} is hurt by its {2}!", battler.pbThis, battler.itemName))
+      battle.pbDisplay(_INTL("{1} is hurt by its {2}!", battler.pbThis, item.name))
     end
   }
 )
@@ -1883,7 +1883,7 @@ Battle::ItemEffects::EndOfRoundEffect.add(:TOXICORB,
   proc { |item, battler, battle|
     next if !battler.pbCanPoison?(battler, false)
     battler.pbPoison(nil, _INTL("{1} was badly poisoned by the {2}!",
-       battler.pbThis, battler.itemName), true)
+       battler.pbThis, item.name), true)
   }
 )
 
@@ -1910,7 +1910,7 @@ Battle::ItemEffects::CertainSwitching.add(:SHEDSHELL,
 Battle::ItemEffects::OnSwitchIn.add(:AIRBALLOON,
   proc { |item, battler, battle|
     battle.pbDisplay(_INTL("{1} floats in the air with its {2}!",
-       battler.pbThis, battler.itemName))
+       battler.pbThis, item.name))
   }
 )
 

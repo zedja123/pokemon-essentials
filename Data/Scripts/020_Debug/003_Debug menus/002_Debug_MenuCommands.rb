@@ -126,7 +126,7 @@ MenuHandlers.add(:debug_menu, :safari_zone_and_bug_contest, {
               break
             end
           end
-        when 1   # Sport Balls
+        when 1   # Safari Balls
           params = ChooseNumberParams.new
           params.setRange(0, 99999)
           params.setDefaultValue(contest.ballcount)
@@ -162,7 +162,7 @@ MenuHandlers.add(:debug_menu, :edit_field_effects, {
         params = ChooseNumberParams.new
         params.setRange(0, 99999)
         params.setDefaultValue($PokemonGlobal.repel)
-        $PokemonGlobal.repel = pbMessageChooseNumber(_INTL("Set the number of steps remaining."), params)
+        $PokemonGlobal.repel = pbMessageChooseNumber(_INTL("Set the Pokémon's level."), params)
       when 1   # Strength used
         $PokemonMap.strengthUsed = !$PokemonMap.strengthUsed
       when 2   # Flash used
@@ -327,7 +327,7 @@ MenuHandlers.add(:debug_menu, :test_wild_battle_advanced, {
           pbMessage(_INTL("You only have one Pokémon."))
           next
         end
-        maxVal = (pbCanTripleBattle?) ? 3 : 2
+        maxVal = (pbCanQuintupleBattle?) ? 5 : 2
         params = ChooseNumberParams.new
         params.setRange(1, maxVal)
         params.setInitialValue(size0)
@@ -439,7 +439,7 @@ MenuHandlers.add(:debug_menu, :test_trainer_battle_advanced, {
           pbMessage(_INTL("You only have one Pokémon."))
           next
         end
-        maxVal = (pbCanTripleBattle?) ? 3 : 2
+        maxVal = (pbCanQuintupleBattle?) ? 5 : 2
         params = ChooseNumberParams.new
         params.setRange(1, maxVal)
         params.setInitialValue(size0)

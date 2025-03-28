@@ -142,12 +142,18 @@ class Battle::Move
       )
     end
     # Item effects that alter accuracy calculation
-    if user.itemActive?
+    if user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       Battle::ItemEffects.triggerAccuracyCalcFromUser(
         user.item, modifiers, user, target, self, @calcType
       )
     end
-    if target.itemActive?
+    if target.itemActive?(target.items)  # Check if there are any active items
+        target.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       Battle::ItemEffects.triggerAccuracyCalcFromTarget(
         target.item, modifiers, user, target, self, @calcType
       )
@@ -186,10 +192,16 @@ class Battle::Move
       c = Battle::AbilityEffects.triggerCriticalCalcFromTarget(target.ability, user, target, c)
     end
     # Item effects that alter critical hit rate
-    if c >= 0 && user.itemActive?
+    if c >= 0 && user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       c = Battle::ItemEffects.triggerCriticalCalcFromUser(user.item, user, target, c)
     end
-    if c >= 0 && target.itemActive?
+    if c >= 0 && target.itemActive?(target.items)  # Check if there are any active items
+        target.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       c = Battle::ItemEffects.triggerCriticalCalcFromTarget(target.item, user, target, c)
     end
     return false if c < 0
@@ -326,12 +338,18 @@ class Battle::Move
       end
     end
     # Item effects that alter damage
-    if user.itemActive?
+    if user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       Battle::ItemEffects.triggerDamageCalcFromUser(
         user.item, user, target, self, multipliers, baseDmg, type
       )
     end
-    if target.itemActive?
+    if target.itemActive?(target.items)  # Check if there are any active items
+        target.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       Battle::ItemEffects.triggerDamageCalcFromTarget(
         target.item, user, target, self, multipliers, baseDmg, type
       )

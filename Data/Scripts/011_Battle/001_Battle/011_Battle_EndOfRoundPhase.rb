@@ -309,13 +309,24 @@ class Battle
   #=============================================================================
   # End Of Round end effects that apply to a battler
   #=============================================================================
-  def pbEORCountDownBattlerEffect(priority, effect)
-    priority.each do |battler|
-      next if battler.fainted? || battler.effects[effect] == 0
-      battler.effects[effect] -= 1
+def pbEORCountDownBattlerEffect(priority, effect)
+  priority.each do |battler|
+    next if battler.fainted? || battler.effects[effect].nil?
+    
+    # Handle array-based effects (e.g., [turns, stacks])
+    if battler.effects[effect].is_a?(Array)
+      battler.effects[effect][0] -= 1  # Decrease the turns left (first element of the array)
+      
+      # If the turns left reach 0, yield the battler (effect should be removed or processed)
+      yield battler if block_given? && battler.effects[effect][0] == 0
+    else
+      # Handle integer-based effects (single value, like turns remaining)
+      battler.effects[effect] -= 1  # Decrease the turns left
+      # If the turns left reach 0, yield the battler
       yield battler if block_given? && battler.effects[effect] == 0
     end
   end
+end
 
   def pbEOREndBattlerEffects(priority)
     # Taunt
@@ -367,6 +378,27 @@ class Battle
         battler.pbSleep
       end
     end
+    # Frost
+pbEORCountDownBattlerEffect(priority, PBEffects::Frost) do |battler|
+  puts "EOR Before Processing Frost: #{battler.effects[PBEffects::Frost].inspect}"
+
+  puts "target initial speed#{battler.initial_speed}"
+  if battler.effects[PBEffects::Frost][0] <= 0
+    if battler.initial_speed # Ensure the value exists
+      speed_diff = (battler.initial_speed - battler.stages[:SPEED]).clamp(0,2)
+      puts "Speed diff: #{speed_diff}"
+      if speed_diff > 0 
+        battler.pbRaiseStatStage(:SPEED, speed_diff, nil) 
+        puts "Speed restored by #{speed_diff} stages!"
+      end
+    end
+
+    battler.effects[PBEffects::Frost] = nil
+    battler.reset_initial_speed
+    pbDisplay(_INTL("{1} thawed out from the frost and restored speed by {2} stages!", battler.pbThis, speed_diff))
+  end
+end
+
     # Perish Song
     perishSongUsers = []
     priority.each do |battler|
@@ -617,9 +649,12 @@ class Battle
         Battle::AbilityEffects.triggerEndOfRoundHealing(battler.ability, battler, self)
       end
       # Black Sludge, Leftovers
-      if battler.itemActive?
-        Battle::ItemEffects.triggerEndOfRoundHealing(battler.item, battler, self)
-      end
+      if battler.itemActive?(battler.items)  # Check if there are any active items
+        battler.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+        Battle::ItemEffects.triggerEndOfRoundHealing(item, battler, self)  # Apply the effect for each item
+  end
+end
     end
     # Self-curing of status due to affection
     if Settings::AFFECTION_EFFECTS && @internalBattle
@@ -689,9 +724,12 @@ class Battle
         Battle::AbilityEffects.triggerEndOfRoundEffect(battler.ability, battler, self)
       end
       # Flame Orb, Sticky Barb, Toxic Orb
-      if battler.itemActive?
+      if battler.itemActive?(battler.items)  # Check if there are any active items
+        battler.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
         Battle::ItemEffects.triggerEndOfRoundEffect(battler.item, battler, self)
       end
+    end
       # Harvest, Pickup, Ball Fetch
       if battler.abilityActive?
         Battle::AbilityEffects.triggerEndOfRoundGainItem(battler.ability, battler, self)

@@ -115,6 +115,42 @@ class Battle::Move::HitTwoToFiveTimes < Battle::Move
 end
 
 #===============================================================================
+# Hits 2-14 times
+#===============================================================================
+class Battle::Move::Hit2To14TimesSpeed  < Battle::Move
+  def multiHitMove?; return true; end
+
+  def pbNumHits(user, targets)
+    return 2 if targets.empty?  # Ensure at least one target exists
+
+    target = targets[0]  # Assume a single target for now
+    
+    user.track_initial_speed
+    
+    user.pbRaiseStatStage(:SPEED, 1, user)
+    # Calculate Speed stage difference
+    speed_stage_diff = user.stages[:SPEED] - target.stages[:SPEED]
+
+    # Ensure minimum 2 hits if user is slower or equal to the target
+    speed_stage_diff = 0 if speed_stage_diff < 0
+
+    # Clamp speed difference between 0 and 12 (max 14 hits total)
+    speed_stage_diff = speed_stage_diff.clamp(0, 12)
+
+    min_hits = 2
+    max_hits = min_hits + speed_stage_diff  # More Speed buffs = more hits, max 14
+
+    num_hits = min_hits + speed_stage_diff
+
+    # If the Pokémon has Skill Link, always hit the max possible
+    num_hits = max_hits if user.hasActiveAbility?(:SKILLLINK)
+
+    puts "Debug: Selected #{num_hits} hits!"  # Debugging log
+    # Buff user's Speed by 1 stage
+    return num_hits
+  end
+end
+#===============================================================================
 # Hits 2-5 times. If the user is Ash Greninja, powers up and hits 3 times.
 # (Water Shuriken)
 #===============================================================================

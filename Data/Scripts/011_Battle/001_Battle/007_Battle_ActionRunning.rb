@@ -6,18 +6,30 @@ class Battle
     return false if trainerBattle?
     battler = @battlers[idxBattler]
     return false if !@canRun && !battler.opposes?
+  
     return true if battler.pbHasType?(:GHOST) && Settings::MORE_TYPE_EFFECTS
     return true if battler.abilityActive? &&
                    Battle::AbilityEffects.triggerCertainEscapeFromBattle(battler.ability, battler)
-    return true if battler.itemActive? &&
-                   Battle::ItemEffects.triggerCertainEscapeFromBattle(battler.item, battler)
-    return false if battler.trappedInBattle?
+    return true if battler.itemActive?(battler.items)  # Check if there are any active items
+    
+    battler.items.each do |item|  # Iterate over the items array
+      puts "✅ itemActive? is #{item}"
+      Battle::ItemEffects.triggerCertainEscapeFromBattle(item, battler)
+      return false if battler.trappedInBattle?
+    end
+  
     allOtherSideBattlers(idxBattler).each do |b|
       return false if b.abilityActive? &&
                       Battle::AbilityEffects.triggerTrappingByTarget(b.ability, battler, b, self)
-      return false if b.itemActive? &&
-                      Battle::ItemEffects.triggerTrappingByTarget(b.item, battler, b, self)
+      
+      return false if b.itemActive?(b.items)  # Check if there are any active items
+      
+      b.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+        Battle::ItemEffects.triggerTrappingByTarget(item, battler, b, self)
+      end
     end
+  
     return true
   end
 
@@ -103,13 +115,17 @@ class Battle
         return 1
       end
       # Held items that guarantee escape
-      if battler.itemActive? &&
-         Battle::ItemEffects.triggerCertainEscapeFromBattle(battler.item, battler)
+      if battler.itemActive?(battler.items)  # Check if there are any active items
+        battler.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+
+        Battle::ItemEffects.triggerCertainEscapeFromBattle(item, battler)
         pbSEPlay("Battle flee")
-        pbDisplayPaused(_INTL("{1} fled using its {2}!", battler.pbThis, battler.itemName))
+        pbDisplayPaused(_INTL("{1} fled using its {2}!", battler.pbThis, item.name))
         @decision = 3
         return 1
       end
+    end
       # Other certain trapping effects
       if battler.trappedInBattle?
         pbDisplayPaused(_INTL("You can't escape!"))
@@ -125,12 +141,15 @@ class Battle
       end
       allOtherSideBattlers(idxBattler).each do |b|
         next if !b.itemActive?
+        b.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
         if Battle::ItemEffects.triggerTrappingByTarget(b.item, battler, b, self)
           pbDisplayPaused(_INTL("{1} prevents escape with {2}!", b.pbThis, b.itemName))
           return 0
         end
       end
     end
+  end
     # Fleeing calculation
     # Get the speeds of the Pokémon fleeing and the fastest opponent
     # NOTE: Not pbSpeed, because using unmodified Speed.

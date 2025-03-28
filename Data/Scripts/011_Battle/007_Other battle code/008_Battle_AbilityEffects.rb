@@ -1447,6 +1447,136 @@ Battle::AbilityEffects::DamageCalcFromUser.add(:TOUGHCLAWS,
   }
 )
 
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:FROSTSHOT,
+  proc { |ability, user, target, move, mults, power, type, battle, c|
+    battle = user.battle
+    
+    # === Calculate Correct Crit Stage (c) with All Modifiers ===
+    c = 0  # Default crit stage
+
+    # Held item boosts (e.g., Scope Lens, Razor Claw)
+    c += 1 if user.hasActiveItem?(:SCOPELENS) || user.hasActiveItem?(:RAZORCLAW)
+
+    # Ability-based crit boost (e.g., Super Luck)
+    c += 1 if user.hasActiveAbility?(:SUPERLUCK)
+
+    # Focus Energy-style effects (increases crit rate by 2)
+    c += 2 if user.effects[PBEffects::FocusEnergy] > 0
+
+    # Clamp crit stage between 0 and 5
+    c = c.clamp(0, 5)
+    crit_chances = [0, 0.2, 0.4, 0.6, 0.8, 1]
+    crit_chance = crit_chances[c]
+
+    # Debugging log for crit chance
+    puts "crit_chance: #{crit_chance}"
+
+    if target.effects[PBEffects::Frost] && target.effects[PBEffects::Frost].is_a?(Array)
+      frost_turns, frost_stacks = target.effects[PBEffects::Frost]
+
+      # Apply damage boost to all hits if target's Speed is lowered (Frost is active)
+      if frost_turns > 0
+      battle.pbShowAbilitySplash(user) # Show ability activation message
+      x = (1.15) + (crit_chance * 0.75) # Damage multiplier calculation based on crit chance
+      
+      if target.damageState.critical == true
+        # Apply the damage multiplier for critical hits
+        mults[:attack_multiplier] *= x.round(1)
+        pbMessage("Critical hit damage boosted by #{x.round(1)}x due to target's Speed drop!")
+        puts "Critical hit damage boosted by #{x.round(1)}x due to target's Speed drop!"
+      else
+        # Non-crit: Apply the same multiplier for slowed target
+        mults[:attack_multiplier] *= x.round(1)
+        pbMessage("Damage boosted by #{x.round(1)}x due to target's Speed drop!")
+        puts "Damage boosted by #{x.round(1)}x due to target's Speed drop!"
+      end
+
+      battle.pbHideAbilitySplash(user)  # Hide ability activation message
+    elsif frost_turns <= 0 && target.damageState.critical == true
+      # Prevent critical damage unless the target is slowed
+      battle.pbShowAbilitySplash(user)
+      mults[:attack_multiplier] *= 1
+      pbMessage("Can only deal Critical Damage to slowed targets")
+      puts "Can only deal Critical Damage to slowed targets"  # Debugging log
+      battle.pbHideAbilitySplash(user)
+    end
+  end
+
+    # Debug the final attack multiplier
+    puts "Final attack multiplier: #{mults[:attack_multiplier]}"
+
+    # Now you need to compute the final damage based on mults and other factors (e.g., power)
+    final_damage = (power * mults[:attack_multiplier]).round
+
+    # Debug the final damage
+    puts "Calculated final damage: #{final_damage}"
+  }
+)
+
+Battle::AbilityEffects::OnDealingHit.add(:FROSTSHOT,
+  proc { |ability, user, target, move, battle|
+    puts "Target Frost effect: #{target.effects[PBEffects::Frost].inspect}"
+
+    # Check if Frost is not applied (no effect array exists or it's empty)
+    if target.effects[PBEffects::Frost].nil? || !target.effects[PBEffects::Frost].is_a?(Array)
+      target.effects[PBEffects::Frost] = [0, 0]  # Initialize Frost effect if missing
+    end
+    
+    frost_turns, frost_stacks = target.effects[PBEffects::Frost]
+
+    # First application or re-application of Frost (apply Speed -1 to target)
+    if frost_turns <= 0  # First application of Frost or no turns left
+      target.pbFrost(target, user)
+    elsif target.damageState.critical == true && frost_turns > 0  # Critical hit and Frost is still active
+      target.pbFrost(target, user)  # Reapply Frost to increase stacks
+    end
+  }
+)
+
+Battle::AbilityEffects::DamageCalcFromUser.add(:CRITICALFROSTING,
+  proc { |ability, user, target, move, mults, power, type|
+    battle = user.battle
+    is_multi_hit = move.respond_to?(:multiHitMove?) && move.multiHitMove?
+    
+    if user.first_hit_of_multi_hit?(move) || !is_multi_hit
+    if target.damageState.critical
+      battle.pbShowAbilitySplash(user)
+      # Neutralize the critical damage boost by setting the multiplier to 1
+      mults[:critical_multiplier] = 1
+      # Debugging: Check the status of the condition for first hit and multi-hit
+      if user.first_hit_of_multi_hit?(move)
+        puts "First hit confirmed."
+      else
+        puts "Not the first hit."
+      end
+
+      # Only attempt freezing on the first hit or if it's not a multi-hit move
+
+        if target.stages[:SPEED] == -6  # Only freeze if speed is at -6
+          puts "Target's speed is at minimum (-6)."
+
+          if target.status != :FROZEN
+            puts "Target is not frozen. Attempting to freeze..."
+            target.pbFreeze  # Attempt to freeze the target
+            # Log if freeze succeeded or not
+            puts "Freeze applied: #{target.status == :FROZEN ? 'Success' : 'Failed'}"
+          else
+            puts "Target is already frozen."
+          end
+        else
+          # If speed isn't already at -6, lower it by 6 stages
+          puts "Target's speed is not at minimum (-6). Lowering speed by 6 stages."
+          target.pbLowerStatStage(:SPEED, 6, user, ability: ability)
+        end
+
+      battle.pbHideAbilitySplash(user)
+    end
+    end
+  }
+)
+
+
 Battle::AbilityEffects::DamageCalcFromUser.add(:TOXICBOOST,
   proc { |ability, user, target, move, mults, power, type|
     if user.poisoned? && move.physicalMove?
@@ -2077,6 +2207,27 @@ Battle::AbilityEffects::OnDealingHit.add(:POISONTOUCH,
       target.pbPoison(user, msg)
     end
     battle.pbHideAbilitySplash(user)
+  }
+)
+
+Battle::AbilityEffects::OnDealingHit.add(:FROST,
+  proc { |ability, user, target, move, battle|
+    # Check if the target has Shield Dust (prevents additional effects)
+    if target.hasActiveAbility?(:SHIELDDUST) && !battle.moldBreaker
+      battle.pbShowAbilitySplash(target)
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        battle.pbDisplay(_INTL("{1} is unaffected!", target.pbThis))
+      end
+      battle.pbHideAbilitySplash(target)
+
+    # Apply Frost condition if possible
+    elsif target.pbCanFrost?(user, Battle::Scene::USE_ABILITY_SPLASH)
+      msg = nil
+      if !Battle::Scene::USE_ABILITY_SPLASH
+        msg = _INTL("{1}'s {2} covered {3} in frost!", user.pbThis, user.abilityName, target.pbThis(true))
+      end
+      target.pbFrost(user, msg)
+    end
   }
 )
 

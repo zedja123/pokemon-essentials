@@ -302,6 +302,10 @@ class Battle::Scene::FightMenu < Battle::Scene::MenuBase
     self.z = z
   end
 
+    if Input.trigger?(Input::A) # Or some specific condition
+    pbMoveReorganize
+  end
+  
   def dispose
     super
     @buttonBitmap&.dispose
@@ -548,4 +552,62 @@ class Battle::Scene::TargetMenu < Battle::Scene::MenuBase
   def refresh
     refreshButtons
   end
+end
+def pbMoveReorganize
+  selmove    = 0
+  oldselmove = 0
+  switching  = false
+
+  # Initialize sprites
+  @sprites["movesel"] = MoveSelectionSprite.new(@viewport)
+  @sprites["movesel"].visible = true
+
+  # Start reorganization loop
+  loop do
+    Graphics.update
+    Input.update
+    pbUpdate
+
+    # Handle inputs for move selection
+    if Input.trigger?(Input::BACK)
+      pbPlayCancelSE
+      break if !switching
+      @sprites["movepresel"].visible = false
+      switching = false
+    elsif Input.trigger?(Input::USE)
+      pbPlayDecisionSE
+      if switching
+        # Swap moves when confirmed
+        tmpmove = @pokemon.moves[oldselmove]
+        @pokemon.moves[oldselmove] = @pokemon.moves[selmove]
+        @pokemon.moves[selmove] = tmpmove
+        @sprites["movepresel"].visible = false
+        switching = false
+        drawSelectedMove(nil, @pokemon.moves[selmove])
+      else
+        # Select move to swap
+        @sprites["movepresel"].index = selmove
+        @sprites["movepresel"].visible = true
+        oldselmove = selmove
+        switching = true
+      end
+    elsif Input.trigger?(Input::UP)
+      # Move selection up
+      selmove -= 1
+      selmove = [0, selmove].max
+      @sprites["movesel"].index = selmove
+      pbPlayCursorSE
+      drawSelectedMove(nil, @pokemon.moves[selmove])
+    elsif Input.trigger?(Input::DOWN)
+      # Move selection down
+      selmove += 1
+      selmove = [selmove, Pokemon::MAX_MOVES - 1].min
+      @sprites["movesel"].index = selmove
+      pbPlayCursorSE
+      drawSelectedMove(nil, @pokemon.moves[selmove])
+    end
+  end
+
+  # Finalize move reorganization
+  @sprites["movesel"].visible = false
 end

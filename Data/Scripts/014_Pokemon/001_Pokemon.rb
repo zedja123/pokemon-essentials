@@ -84,7 +84,9 @@ class Pokemon
   attr_accessor :cannot_release
   # Whether this Pokémon can be traded
   attr_accessor :cannot_trade
-
+  attr_accessor :item
+  attr_accessor :items
+  
   # Max total IVs
   IV_STAT_LIMIT = 31
   # Max total EVs
@@ -417,77 +419,84 @@ class Pokemon
     @shiny = true if @super_shiny
   end
 
-  #=============================================================================
-  # Ability
-  #=============================================================================
+#=============================================================================
+# Ability (Supports multiple normal and hidden abilities)
+#=============================================================================
 
-  # The index of this Pokémon's ability (0, 1 are natural abilities, 2+ are
-  # hidden abilities) as defined for its species/form. An ability may not be
-  # defined at this index. Is recalculated (as 0 or 1) if made nil.
-  # @return [Integer] the index of this Pokémon's ability
-  def ability_index
-    @ability_index = (@personalID & 1) if !@ability_index
-    return @ability_index
+# The index of this Pokémon's ability as defined for its species/form.
+# If unset, it is recalculated randomly based on the number of available abilities.
+# @return [Integer] the index of this Pokémon's ability
+def ability_index
+  return @ability_index if @ability_index  # If already set, return it
+
+  normal_count = species_data.abilities.length
+  hidden_count = species_data.hidden_abilities.length
+
+  # Randomly assign a normal ability
+  if hidden_count > 0 && rand(100) < 10  # 10% chance for a hidden ability (adjust as needed)
+    @ability_index = normal_count + rand(hidden_count)  # Choose from hidden abilities
+  else
+    @ability_index = rand(normal_count)  # Choose from normal abilities only
   end
 
-  # @param value [Integer, nil] forced ability index (nil if none is set)
-  def ability_index=(value)
-    @ability_index = value
-    @ability = nil
+  return @ability_index
+end
+
+# @param value [Integer, nil] forced ability index (nil if none is set)
+def ability_index=(value)
+  @ability_index = value
+  @ability = nil
+end
+
+# @return [GameData::Ability, nil] an Ability object corresponding to this Pokémon's ability
+def ability
+  return GameData::Ability.try_get(ability_id)
+end
+
+# @return [Symbol, nil] the ability symbol of this Pokémon's ability
+def ability_id
+  sp_data = species_data
+  return nil if sp_data.abilities.empty? && sp_data.hidden_abilities.empty?
+
+  if ability_index < sp_data.abilities.length  # Normal ability
+    return sp_data.abilities[ability_index]
+  else  # Hidden ability (only if intended)
+    hidden_index = ability_index - sp_data.abilities.length
+    return sp_data.hidden_abilities[hidden_index] if hasHiddenAbility?
   end
 
-  # @return [GameData::Ability, nil] an Ability object corresponding to this Pokémon's ability
-  def ability
-    return GameData::Ability.try_get(ability_id)
-  end
+  return sp_data.abilities[0]  # Fallback to first normal ability
+end
 
-  # @return [Symbol, nil] the ability symbol of this Pokémon's ability
-  def ability_id
-    if !@ability
-      sp_data = species_data
-      abil_index = ability_index
-      if abil_index >= 2   # Hidden ability
-        @ability = sp_data.hidden_abilities[abil_index - 2]
-        abil_index = (@personalID & 1) if !@ability
-      end
-      if !@ability   # Natural ability or no hidden ability defined
-        @ability = sp_data.abilities[abil_index] || sp_data.abilities[0]
-      end
-    end
-    return @ability
-  end
+# @param value [Symbol, String, GameData::Ability, nil] ability to set
+def ability=(value)
+  return if value && !GameData::Ability.exists?(value)
+  @ability = (value) ? GameData::Ability.get(value).id : value
+end
 
-  # @param value [Symbol, String, GameData::Ability, nil] ability to set
-  def ability=(value)
-    return if value && !GameData::Ability.exists?(value)
-    @ability = (value) ? GameData::Ability.get(value).id : value
-  end
+# Returns whether this Pokémon has a particular ability.
+# If no value is given, returns whether this Pokémon has an ability set.
+# @param check_ability [Symbol, String, GameData::Ability, nil] ability ID to check
+# @return [Boolean] whether this Pokémon has a particular ability or an ability at all
+def hasAbility?(check_ability = nil)
+  current_ability = self.ability
+  return !current_ability.nil? if check_ability.nil?
+  return current_ability == check_ability
+end
 
-  # Returns whether this Pokémon has a particular ability. If no value
-  # is given, returns whether this Pokémon has an ability set.
-  # @param check_ability [Symbol, String, GameData::Ability, nil] ability ID to check
-  # @return [Boolean] whether this Pokémon has a particular ability or
-  #   an ability at all
-  def hasAbility?(check_ability = nil)
-    current_ability = self.ability
-    return !current_ability.nil? if check_ability.nil?
-    return current_ability == check_ability
-  end
+# @return [Boolean] whether this Pokémon has a hidden ability
+def hasHiddenAbility?
+  return ability_index >= species_data.abilities.length && ability_index < species_data.abilities.length + species_data.hidden_abilities.length
+end
 
-  # @return [Boolean] whether this Pokémon has a hidden ability
-  def hasHiddenAbility?
-    return ability_index >= 2
-  end
-
-  # @return [Array<Array<Symbol,Integer>>] the abilities this Pokémon can have,
-  #   where every element is [ability ID, ability index]
-  def getAbilityList
-    ret = []
-    sp_data = species_data
-    sp_data.abilities.each_with_index { |a, i| ret.push([a, i]) if a }
-    sp_data.hidden_abilities.each_with_index { |a, i| ret.push([a, i + 2]) if a }
-    return ret
-  end
+# @return [Array<Array<Symbol,Integer>>] the abilities this Pokémon can have,
+#   where every element is [ability ID, ability index]
+def getAbilityList
+  ret = []
+  species_data.abilities.each_with_index { |a, i| ret.push([a, i]) if a }
+  species_data.hidden_abilities.each_with_index { |a, i| ret.push([a, i + species_data.abilities.length]) if a }
+  return ret
+end
 
   #=============================================================================
   # Nature
@@ -544,60 +553,84 @@ class Pokemon
     return self.nature == check_nature
   end
 
-  #=============================================================================
-  # Items
-  #=============================================================================
-
-  # @return [GameData::Item, nil] an Item object corresponding to this Pokémon's item
-  def item
-    return GameData::Item.try_get(@item)
+#=============================================================================
+# Items
+#=============================================================================
+def item
+  @items ||= []  # Ensure @items is always an array
+  @items.map { |item| GameData::Item.get(item) }
+end
+# Returns an array of held items.
+# @return [Array<GameData::Item>] Array of item objects corresponding to this Pokémon's held items
+  def items
+    @items ||= []  # Ensure @items is always an array
+    @items.map { |item| GameData::Item.get(item) }
   end
 
-  def item_id
-    return @item
-  end
+# Returns an array of held item IDs.
+# @return [Array<Symbol>] Array of item IDs
+def item_ids
+  return @items.dup
+end
 
-  # Gives an item to this Pokémon to hold.
-  # @param value [Symbol, String, GameData::Item, nil] ID of the item to give
-  #   to this Pokémon
-  def item=(value)
-    return if value && !GameData::Item.exists?(value)
-    @item = (value) ? GameData::Item.get(value).id : value
-  end
+def item_id
+  return @items.dup
+end
 
-  # Returns whether this Pokémon is holding an item. If an item id is passed,
-  # returns whether the Pokémon is holding that item.
-  # @param check_item [Symbol, String, GameData::Item, nil] item ID to check
-  # @return [Boolean] whether the Pokémon is holding the specified item or
-  #   an item at all
+# Gives an item to this Pokémon to hold.
+# If the Pokémon is already holding an item, the new item is added to the list.
+# @param value [Symbol, String, GameData::Item, nil] ID of the item to give
+def add_item(value)
+  return if value.nil? || !GameData::Item.exists?(value)
+  item_symbol = value.is_a?(GameData::Item) ? value.id : value
+  @items << item_symbol unless @items.include?(item_symbol)
+end
+
+# Removes a specific held item (if it exists).
+# @param value [Symbol, String, GameData::Item] ID of the item to remove
+def remove_item(value)
+  return if value.nil?
+  @items.delete(GameData::Item.get(value).id)
+end
+
+# Removes all held items from the Pokémon.
+def clear_items
+  @items.clear
+end
+
+# Returns whether this Pokémon is holding any item, or a specific item.
+# @param check_item [Symbol, String, GameData::Item, nil] item ID to check
+# @return [Boolean] whether the Pokémon is holding the specified item or any item at all
   def hasItem?(check_item = nil)
-    return !@item.nil? if check_item.nil?
-    held_item = self.item
-    return held_item && held_item == check_item
-  end
-
-  # @return [Array<Array<Symbol>>] the items this species can be found holding in the wild
-  def wildHoldItems
-    sp_data = species_data
-    return [sp_data.wild_item_common, sp_data.wild_item_uncommon, sp_data.wild_item_rare]
-  end
-
-  # @return [Mail, nil] mail held by this Pokémon (nil if there is none)
-  def mail
-    @mail = nil if @mail && (!@mail.item || !hasItem?(@mail.item))
-    return @mail
-  end
-
-  # If mail is a Mail object, gives that mail to this Pokémon. If nil is given,
-  # removes the held mail.
-  # @param mail [Mail, nil] mail to be held by this Pokémon
-  def mail=(mail)
-    if !mail.nil? && !mail.is_a?(Mail)
-      raise ArgumentError, _INTL("Invalid value {1} given", mail.inspect)
+    return false if @item.nil?  # Ensure we don't call .empty? on nil
+    if @item.is_a?(Array)
+      return !@item.empty? if check_item.nil?
+      return @item.include?(check_item)
     end
-    @mail = mail
+    return check_item.nil? ? true : (@item == check_item)
   end
 
+# @return [Array<Array<Symbol>>] the items this species can be found holding in the wild
+def wildHoldItems
+  sp_data = species_data
+  return [sp_data.wild_item_common, sp_data.wild_item_uncommon, sp_data.wild_item_rare]
+end
+
+# @return [Mail, nil] mail held by this Pokémon (nil if there is none)
+def mail
+  @mail = nil if @mail && (!@mail.item || !hasItem?(@mail.item))
+  return @mail
+end
+
+# If mail is a Mail object, gives that mail to this Pokémon. If nil is given,
+# removes the held mail.
+# @param mail [Mail, nil] mail to be held by this Pokémon
+def mail=(mail)
+  if !mail.nil? && !mail.is_a?(Mail)
+    raise ArgumentError, _INTL("Invalid value {1} given", mail.inspect)
+  end
+  @mail = mail
+end
   #=============================================================================
   # Moves
   #=============================================================================
@@ -1171,7 +1204,8 @@ class Pokemon
     @ability          = nil
     @nature           = nil
     @nature_for_stats = nil
-    @item             = nil
+    @item_id
+    @items = []  # Ensure items is initialized properly
     @mail             = nil
     @moves            = []
     reset_moves if withMoves

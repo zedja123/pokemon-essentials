@@ -133,7 +133,10 @@ end
 #===============================================================================
 class Battle::Move::FailsIfTargetHasNoItem < Battle::Move
   def pbFailsAgainstTarget?(user, target, show_message)
-    if !target.item || !target.itemActive?
+    if !target.item || !target.itemActive?(target.items)  # Check if there are any active items
+        target.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       @battle.pbDisplay(_INTL("But it failed!")) if show_message
       return true
     end

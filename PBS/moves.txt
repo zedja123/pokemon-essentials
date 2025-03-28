@@ -479,7 +479,7 @@ Accuracy = 100
 TotalPP = 5
 Target = NearOther
 FunctionCode = AlwaysCriticalHit
-Flags = Contact,CanProtect,CanMirrorMove,Punching,CannotMetronome
+Flags = Contact,CanProtect,CanMirrorMove,CannotMetronome
 Description = Strikes with a fierce blow through mastery of the Dark style. Always results in a critical hit.
 #-------------------------------
 [LASHOUT]
@@ -8633,7 +8633,7 @@ Accuracy = 100
 TotalPP = 5
 Target = NearOther
 FunctionCode = HitThreeTimesAlwaysCriticalHit
-Flags = Contact,CanProtect,CanMirrorMove,Punching,CannotMetronome
+Flags = Contact,CanProtect,CanMirrorMove,CannotMetronome
 Description = Hits three times in a row with mastery of the Water style. This attack always deals critical hits.
 #-------------------------------
 [WATERSHURIKEN]
@@ -8710,3 +8710,26 @@ TotalPP = 40
 Target = User
 FunctionCode = RaiseUserDefense1
 Description = The user withdraws its body into its hard shell, raising its Defense stat.
+#-------------------------------
+[RANGERSFOCUS]
+Name = Ranger's Focus
+Type = ICE
+Category = Physical
+Power = 25
+Accuracy = 100
+TotalPP = 30
+Target = NearOther
+FunctionCode = Hit2To14TimesSpeed
+Flags = CanProtect,CanMirrorMove,Contact
+Description = Fires a flurry of 2-14 arrows.
+#-------------------------------
+[HAWKSHOT]
+Name = Hawkshot
+Type = FLYING
+Category = Status
+Accuracy = 0
+TotalPP = 100
+Target = NearOther
+FunctionCode = Hawkshot
+Flags = CanProtect,CanMirrorMove
+Description = Sends a Hawk Spirit toward the target location, granting  sight of the area along its path.

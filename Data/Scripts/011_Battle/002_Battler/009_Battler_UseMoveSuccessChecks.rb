@@ -476,7 +476,7 @@ class Battle::Battler
         return false
       end
       if target.hasActiveItem?(:AIRBALLOON)
-        @battle.pbDisplay(_INTL("{1}'s {2} makes Ground moves miss!", target.pbThis, target.itemName)) if show_message
+        @battle.pbDisplay(_INTL("{1}'s {2} makes Ground moves miss!", target.pbThis, item.name)) if show_message
         return false
       end
       if target.effects[PBEffects::MagnetRise] > 0

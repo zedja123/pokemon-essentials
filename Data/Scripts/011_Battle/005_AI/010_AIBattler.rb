@@ -280,7 +280,7 @@ class Battle::AI::AIBattler
   def item;    return battler.item;    end
 
   def item_active?
-    return battler.itemActive?
+    return battler.itemActive?(battler.items)  # Check if there are any active items
   end
 
   def has_active_item?(item)
@@ -355,9 +355,12 @@ class Battle::AI::AIBattler
          Battle::AbilityEffects.triggerTrappingByTarget(b.ability, battler, b.battler, @ai.battle)
         return false
       end
-      if b.item_active? &&
-         Battle::ItemEffects.triggerTrappingByTarget(b.item, battler, b.battler, @ai.battle)
+      if b.item_active?(b.items)  # Check if there are any active items
+        battler.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}" &&
+         Battle::ItemEffects.triggerTrappingByTarget(item, battler, b.battler, @ai.battle)
         return false
+        end
       end
     end
     return true

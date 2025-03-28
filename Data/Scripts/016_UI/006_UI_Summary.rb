@@ -654,17 +654,17 @@ class PokemonSummary_Scene
     textpos = [
       [_INTL("HP"), 292, 82, :center, base, statshadows[:HP]],
       [sprintf("%d/%d", @pokemon.hp, @pokemon.totalhp), 462, 82, :right, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [_INTL("Attack"), 248, 126, :left, base, statshadows[:ATTACK]],
+      [_INTL("Attack Damage"), 248, 126, :left, base, statshadows[:ATTACK]],
       [@pokemon.attack.to_s, 456, 126, :right, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [_INTL("Defense"), 248, 158, :left, base, statshadows[:DEFENSE]],
+      [_INTL("Armor"), 248, 158, :left, base, statshadows[:DEFENSE]],
       [@pokemon.defense.to_s, 456, 158, :right, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [_INTL("Sp. Atk"), 248, 190, :left, base, statshadows[:SPECIAL_ATTACK]],
+      [_INTL("Ability Power"), 248, 190, :left, base, statshadows[:SPECIAL_ATTACK]],
       [@pokemon.spatk.to_s, 456, 190, :right, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [_INTL("Sp. Def"), 248, 222, :left, base, statshadows[:SPECIAL_DEFENSE]],
+      [_INTL("Magic Resist"), 248, 222, :left, base, statshadows[:SPECIAL_DEFENSE]],
       [@pokemon.spdef.to_s, 456, 222, :right, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [_INTL("Speed"), 248, 254, :left, base, statshadows[:SPEED]],
+      [_INTL("Attack Speed"), 248, 254, :left, base, statshadows[:SPEED]],
       [@pokemon.speed.to_s, 456, 254, :right, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [_INTL("Ability"), 224, 290, :left, base, shadow]
+      [_INTL("Passive"), 224, 290, :left, base, shadow]
     ]
     # Draw ability name and description
     ability = @pokemon.ability

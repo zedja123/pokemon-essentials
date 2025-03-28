@@ -970,7 +970,7 @@ class Battle::Move::LowerTargetDefense1 < Battle::Move::TargetStatDownMove
 end
 
 #===============================================================================
-# Decreases the target's Defense by 1 stage. Power is multiplied by 1.5 if
+# Decreases the target's Defense by 1 stage. Power is mutliplied by 1.5 if
 # Gravity is in effect. (Grav Apple)
 #===============================================================================
 class Battle::Move::LowerTargetDefense1PowersUpInGravity < Battle::Move::LowerTargetDefense1
@@ -1106,6 +1106,29 @@ class Battle::Move::LowerTargetSpeed1 < Battle::Move::TargetStatDownMove
   def initialize(battle, move)
     super
     @statDown = [:SPEED, 1]
+  end
+end
+
+#===============================================================================
+# Decreases the target's Speed by 1 stage. 5% chance
+#===============================================================================
+class Battle::Move::LowerTargetSpeed150 < Battle::Move::TargetStatDownMove
+  def initialize(battle, move)
+    super
+    @statDown = [:SPEED, 1]  # The stat to be lowered is Speed by 1
+  end
+
+  # Override the effect to apply stat down with a 50% chance
+  def pbEffectAgainstTarget(user, target)
+    return if target.damageState.substitute  # Skip if the target has a substitute
+
+    # 5% chance to lower the target's Speed
+    if @battle.pbRandom(100) < 5  # Random chance (0 to 99)
+      target.pbLowerStatStage(@statDown[0], @statDown[1], user, ability: nil)
+      puts "Speed decreased by 1 with 5% chance!"  # Debugging log
+    else
+      puts "Speed debuff did not apply (5% chance failed)"  # Debugging log
+    end
   end
 end
 
@@ -1247,6 +1270,127 @@ class Battle::Move::LowerTargetEvasion1RemoveSideEffects < Battle::Move::TargetS
     if target.pbCanLowerStatStage?(@statDown[0], user, self)
       target.pbLowerStatStage(@statDown[0], @statDown[1], user)
     end
+    if target.pbOwnSide.effects[PBEffects::AuroraVeil] > 0
+      target.pbOwnSide.effects[PBEffects::AuroraVeil] = 0
+      @battle.pbDisplay(_INTL("{1}'s Aurora Veil wore off!", target.pbTeam))
+    end
+    if target.pbOwnSide.effects[PBEffects::LightScreen] > 0
+      target.pbOwnSide.effects[PBEffects::LightScreen] = 0
+      @battle.pbDisplay(_INTL("{1}'s Light Screen wore off!", target.pbTeam))
+    end
+    if target.pbOwnSide.effects[PBEffects::Reflect] > 0
+      target.pbOwnSide.effects[PBEffects::Reflect] = 0
+      @battle.pbDisplay(_INTL("{1}'s Reflect wore off!", target.pbTeam))
+    end
+    if target.pbOwnSide.effects[PBEffects::Mist] > 0
+      target.pbOwnSide.effects[PBEffects::Mist] = 0
+      @battle.pbDisplay(_INTL("{1}'s Mist faded!", target.pbTeam))
+    end
+    if target.pbOwnSide.effects[PBEffects::Safeguard] > 0
+      target.pbOwnSide.effects[PBEffects::Safeguard] = 0
+      @battle.pbDisplay(_INTL("{1} is no longer protected by Safeguard!!", target.pbTeam))
+    end
+    if target.pbOwnSide.effects[PBEffects::StealthRock] ||
+       (Settings::MECHANICS_GENERATION >= 6 &&
+       target.pbOpposingSide.effects[PBEffects::StealthRock])
+      target.pbOwnSide.effects[PBEffects::StealthRock]      = false
+      target.pbOpposingSide.effects[PBEffects::StealthRock] = false if Settings::MECHANICS_GENERATION >= 6
+      @battle.pbDisplay(_INTL("{1} blew away stealth rocks!", user.pbThis))
+    end
+    if target.pbOwnSide.effects[PBEffects::Spikes] > 0 ||
+       (Settings::MECHANICS_GENERATION >= 6 &&
+       target.pbOpposingSide.effects[PBEffects::Spikes] > 0)
+      target.pbOwnSide.effects[PBEffects::Spikes]      = 0
+      target.pbOpposingSide.effects[PBEffects::Spikes] = 0 if Settings::MECHANICS_GENERATION >= 6
+      @battle.pbDisplay(_INTL("{1} blew away spikes!", user.pbThis))
+    end
+    if target.pbOwnSide.effects[PBEffects::ToxicSpikes] > 0 ||
+       (Settings::MECHANICS_GENERATION >= 6 &&
+       target.pbOpposingSide.effects[PBEffects::ToxicSpikes] > 0)
+      target.pbOwnSide.effects[PBEffects::ToxicSpikes]      = 0
+      target.pbOpposingSide.effects[PBEffects::ToxicSpikes] = 0 if Settings::MECHANICS_GENERATION >= 6
+      @battle.pbDisplay(_INTL("{1} blew away poison spikes!", user.pbThis))
+    end
+    if target.pbOwnSide.effects[PBEffects::StickyWeb] ||
+       (Settings::MECHANICS_GENERATION >= 6 &&
+       target.pbOpposingSide.effects[PBEffects::StickyWeb])
+      target.pbOwnSide.effects[PBEffects::StickyWeb]      = false
+      target.pbOpposingSide.effects[PBEffects::StickyWeb] = false if Settings::MECHANICS_GENERATION >= 6
+      @battle.pbDisplay(_INTL("{1} blew away sticky webs!", user.pbThis))
+    end
+    if Settings::MECHANICS_GENERATION >= 8 && @battle.field.terrain != :None
+      case @battle.field.terrain
+      when :Electric
+        @battle.pbDisplay(_INTL("The electricity disappeared from the battlefield."))
+      when :Grassy
+        @battle.pbDisplay(_INTL("The grass disappeared from the battlefield."))
+      when :Misty
+        @battle.pbDisplay(_INTL("The mist disappeared from the battlefield."))
+      when :Psychic
+        @battle.pbDisplay(_INTL("The weirdness disappeared from the battlefield."))
+      end
+      @battle.field.terrain = :None
+    end
+  end
+end
+
+#===============================================================================
+# Decreases the target's evasion by 1 stage. Ends all barriers and entry
+# hazards for the target's side OR on both sides. (Defog + Frisk)
+#===============================================================================
+class Battle::Move::Hawkshot < Battle::Move
+  def initialize(battle, move)
+    super
+    @statDown = [:EVASION, 1]
+  end
+
+  # Function to check if the move can fail
+  def pbFailsAgainstTarget?(user, target, show_message)
+    # Same checks as Defog, checking for protective side effects
+    targetSide = target.pbOwnSide
+    targetOpposingSide = target.pbOpposingSide
+    return false if targetSide.effects[PBEffects::AuroraVeil] > 0 ||
+                    targetSide.effects[PBEffects::LightScreen] > 0 ||
+                    targetSide.effects[PBEffects::Reflect] > 0 ||
+                    targetSide.effects[PBEffects::Mist] > 0 ||
+                    targetSide.effects[PBEffects::Safeguard] > 0
+    return false if targetSide.effects[PBEffects::StealthRock] ||
+                    targetSide.effects[PBEffects::Spikes] > 0 ||
+                    targetSide.effects[PBEffects::ToxicSpikes] > 0 ||
+                    targetSide.effects[PBEffects::StickyWeb]
+    return false if Settings::MECHANICS_GENERATION >= 6 &&
+                    (targetOpposingSide.effects[PBEffects::StealthRock] ||
+                    targetOpposingSide.effects[PBEffects::Spikes] > 0 ||
+                    targetOpposingSide.effects[PBEffects::ToxicSpikes] > 0 ||
+                    targetOpposingSide.effects[PBEffects::StickyWeb])
+    return false if Settings::MECHANICS_GENERATION >= 8 && @battle.field.terrain != :None
+    return true
+  end
+
+  # Reveal the item and remove side effects
+  def pbEffectAgainstTarget(user, target)
+    # Reveal held items like Frisk
+    foes = @battle.allOtherSideBattlers(user.index).select { |b| b.item }
+    
+    if foes.length > 0
+      if Settings::MECHANICS_GENERATION >= 6
+        foes.each do |b|
+          @battle.pbDisplay(_INTL("{1} frisked {2} and found its {3}!", 
+             user.pbThis, b.pbThis(true), b.itemName))
+        end
+      else
+        foe = foes[@battle.pbRandom(foes.length)]
+        @battle.pbDisplay(_INTL("{1} frisked the foe and found one {2}!", 
+           user.pbThis, foe.itemName))
+      end
+    end
+
+    # Now proceed to remove side effects (like Defog)
+    if target.pbCanLowerStatStage?(@statDown[0], user, self)
+      target.pbLowerStatStage(@statDown[0], @statDown[1], user)
+    end
+    
+    # Remove effects similar to Defog
     if target.pbOwnSide.effects[PBEffects::AuroraVeil] > 0
       target.pbOwnSide.effects[PBEffects::AuroraVeil] = 0
       @battle.pbDisplay(_INTL("{1}'s Aurora Veil wore off!", target.pbTeam))

@@ -1339,7 +1339,10 @@ class Battle::Move::TypeAndPowerDependOnUserBerry < Battle::Move
   def pbMoveFailed?(user, targets)
     # NOTE: Unnerve does not stop a Pokémon using this move.
     item = user.item
-    if !item || !item.is_berry? || !user.itemActive? ||
+    if !item || !item.is_berry? || !user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end ||
        item.flags.none? { |f| f[/^NaturalGift_/i] }
       @battle.pbDisplay(_INTL("But it failed!"))
       return true
@@ -1408,7 +1411,10 @@ class Battle::Move::TypeDependsOnUserPlate < Battle::Move
 
   def pbBaseType(user)
     ret = :NORMAL
-    if user.item_id && user.itemActive?
+    if user.item_id && user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       typ = @itemTypes[user.item_id]
       ret = typ if typ && GameData::Type.exists?(typ)
     end
@@ -1445,7 +1451,10 @@ class Battle::Move::TypeDependsOnUserMemory < Battle::Move
 
   def pbBaseType(user)
     ret = :NORMAL
-    if user.item_id && user.itemActive?
+    if user.item_id && user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       typ = @itemTypes[user.item_id]
       ret = typ if typ && GameData::Type.exists?(typ)
     end
@@ -1469,7 +1478,10 @@ class Battle::Move::TypeDependsOnUserDrive < Battle::Move
 
   def pbBaseType(user)
     ret = :NORMAL
-    if user.item_id && user.itemActive?
+    if user.item_id && user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       typ = @itemTypes[user.item_id]
       ret = typ if typ && GameData::Type.exists?(typ)
     end

@@ -397,6 +397,34 @@ class Battle::Battler
   end
 
   #=============================================================================
+  # Frost
+  #=============================================================================
+def pbFrost(target, user)
+  target.track_initial_speed
+  puts "Before Processing Frost: #{target.effects[PBEffects::Frost].inspect}"  # Log the initial value
+  # Ensure Frost effect array exists
+  target.effects[PBEffects::Frost] ||= [0, 0]  # Initialize if nil
+
+  if (!target.effects[PBEffects::Frost] || target.effects[PBEffects::Frost][0] <= 0) # First application
+    # Store initial speed in the battler instance variable @initial_speed
+    target.effects[PBEffects::Frost] = [2, 1]  # 2 turns, 1 stack
+    target.pbLowerStatStage(:SPEED, 1, user)  # Reduce Speed by 1 stage
+    puts "After Applying Frost 1 Stack: #{target.effects[PBEffects::Frost].inspect}"
+  elsif target.damageState.critical == false && target.effects[PBEffects::Frost][0] > 0  # Second application
+    target.effects[PBEffects::Frost] = [2, 1]  # 2 turns, 1 stack
+    puts "After Applying Frost 1 Stack: #{target.effects[PBEffects::Frost].inspect}"
+  elsif target.damageState.critical == true && target.effects[PBEffects::Frost][0] > 0  # Second application
+    target.effects[PBEffects::Frost] = [2, 2]  # Reset turns, increase to 2 stacks
+    target.pbLowerStatStage(:SPEED, 1, user)  # Reduce Speed again (for 2nd stack)
+    puts "After Applying Frost 2 Stack by Critical #{target.damageState.critical}: #{target.effects[PBEffects::Frost].inspect}"
+  end
+
+  target.battle.pbDisplay(_INTL("{1} is covered in frost!", target.pbThis))
+  
+  # Log Frost value again after battle text (to see if it changed unexpectedly)
+  puts "Final Frost Value After Display: #{target.effects[PBEffects::Frost].inspect}"
+end
+  #=============================================================================
   # Generalised status displays
   #=============================================================================
   def pbContinueStatus

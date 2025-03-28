@@ -154,7 +154,7 @@ class PokemonPokedexInfo_Scene
   def pbGetAvailableForms
     ret = []
     multiple_forms = false
-    gender_differences = (GameData::Species.front_sprite_filename(@species, 0) != GameData::Species.front_sprite_filename(@species, 0, 1))
+    gender_differences = (GameData::Species.front_sprite_filename(@species, 0) == GameData::Species.front_sprite_filename(@species, 0, 1))
     # Find all genders/forms of @species that have been seen
     GameData::Species.each do |sp|
       next if sp.species != @species
@@ -246,7 +246,7 @@ class PokemonPokedexInfo_Scene
     end
     if $player.owned?(@species)
       # Write the category
-      textpos.push([_INTL("{1} Pokémon", species_data.category), 246, 80, :left, base, shadow])
+      textpos.push([_INTL("{1} Champion", species_data.category), 246, 80, :left, base, shadow])
       # Write the height and weight
       if !@show_battled_count
         height = species_data.height
@@ -328,7 +328,7 @@ class PokemonPokedexInfo_Scene
       map_metadata = GameData::MapMetadata.try_get(enc_data.map)
       next if !map_metadata || map_metadata.has_flag?("HideEncountersInPokedex")
       mappos = map_metadata.town_map_position
-      next if !mappos || mappos[0] != @region   # Map isn't in the region being shown
+      next if mappos[0] != @region   # Map isn't in the region being shown
       # Get the size and shape of the map in the Town Map
       map_size = map_metadata.town_map_size
       map_width = 1

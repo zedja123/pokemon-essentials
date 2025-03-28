@@ -1070,3 +1070,11 @@ Description = Combines Unnerve and Chilling Neigh Abilities.
 [ASONEGRIMNEIGH]
 Name = As One
 Description = Combines Unnerve and Grim Neigh Abilities.
+#-------------------------------
+[FROSTSHOT]
+Name = Frost Shot
+Description = Hits apply Frost, reducing speed of enemies -1 max. Hits gainst enemies with Frost are modified to deal 115% + (75% of critical strike chance + 100% of critical strike damage bonus) damage. Critical strikes do not deal any additional damage, instead they reapply Frost reducing speed in further -1 stage, totalizing -2 max. Frost lasts 2 rounds.
+#-------------------------------
+[CRITICALFROSTING]
+Name = Critical Frost
+Description = Forgo the critical damage to decrease speed sharply.

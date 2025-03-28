@@ -302,7 +302,10 @@ class Battle::Move::UserConsumeBerryRaiseDefense2 < Battle::Move::StatUpMove
 
   def pbCanChooseMove?(user, commandPhase, showMessages)
     item = user.item
-    if !item || !item.is_berry? || !user.itemActive?
+    if !item || !item.is_berry? || !user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       if showMessages
         msg = _INTL("{1} can't use that move because it doesn't have a Berry!", user.pbThis)
         (commandPhase) ? @battle.pbDisplayPaused(msg) : @battle.pbDisplay(msg)
@@ -315,7 +318,10 @@ class Battle::Move::UserConsumeBerryRaiseDefense2 < Battle::Move::StatUpMove
   def pbMoveFailed?(user, targets)
     # NOTE: Unnerve does not stop a Pokémon using this move.
     item = user.item
-    if !item || !item.is_berry? || !user.itemActive?
+    if !item || !item.is_berry? || !user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end
       @battle.pbDisplay(_INTL("But it failed!"))
       return true
     end
@@ -403,7 +409,10 @@ end
 class Battle::Move::ThrowUserItemAtTarget < Battle::Move
   def pbCheckFlingSuccess(user)
     @willFail = false
-    @willFail = true if !user.item || !user.itemActive? || user.unlosableItem?(user.item)
+    @willFail = true if !user.item || !user.itemActive?(user.items)  # Check if there are any active items
+        user.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
+end || user.unlosableItem?(user.item)
     return if @willFail
     @willFail = true if user.item.is_berry? && !user.canConsumeBerry?
     return if @willFail

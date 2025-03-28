@@ -44,7 +44,11 @@ class Battle::Battler
   attr_accessor :statsLoweredThisRound   # Boolean for whether self's stat(s) lowered this round
   attr_accessor :canRestoreIceFace   # Whether Hail started in the round
   attr_accessor :damageState
-
+  attr_accessor :multi_hit_tracker
+  attr_accessor :initial_speed
+  attr_accessor :items
+  attr_accessor :set_items
+  
   # These arrays should all have the same number of values in them
   STAT_STAGE_MULTIPLIERS    = [2, 2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 7, 8]
   STAT_STAGE_DIVISORS       = [8, 7, 6, 5, 4, 3, 2, 2, 2, 2, 2, 2, 2]
@@ -57,6 +61,26 @@ class Battle::Battler
   #=============================================================================
   attr_reader :level
 
+  def initialize(*args)
+    super  # Call the parent class's initialize method if needed
+    @items = []  # Ensure @items is always initialized as an array
+  end
+ 
+def items
+  @items ||= []  # If @items is nil, initialize it as an empty array
+  puts "Items before mapping: #{@items.inspect}"
+  @items  # Return @items to access the list of items
+end
+
+def register_items(item_ids)
+  @items = item_ids
+  puts "Registered items: #{@items.inspect}"
+end
+  # Setter method to assign an array of item IDs to the battler
+  def items=(item_ids)
+    @items = item_ids.map { |id| id.to_s }  # Convert each item ID to a string
+  end
+  
   def level=(value)
     @level = value
     @pokemon.level = value if @pokemon
@@ -128,6 +152,15 @@ class Battle::Battler
     @statusCount = value
     @pokemon.statusCount = value if @pokemon
     @battle.scene.pbRefreshOne(@index)
+  end
+    
+  def initialize(*args)
+    super(*args) 
+    @multi_hit_tracker ||= {}  # Initialize the multi-hit tracker if it hasn't been initialized yet
+  end
+  
+  def get_items
+    @items  # Return the items
   end
 
   #=============================================================================
@@ -255,9 +288,12 @@ class Battle::Battler
       speedMult = Battle::AbilityEffects.triggerSpeedCalc(self.ability, self, speedMult)
     end
     # Item effects that alter calculated Speed
-    if itemActive?
+    if itemActive?(items)  # Check if there are any active items
+        items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
       speedMult = Battle::ItemEffects.triggerSpeedCalc(self.item, self, speedMult)
     end
+  end
     # Other effects
     speedMult *= 2 if pbOwnSide.effects[PBEffects::Tailwind] > 0
     speedMult /= 2 if pbOwnSide.effects[PBEffects::Swamp] > 0
@@ -281,9 +317,12 @@ class Battle::Battler
     if abilityActive? && !@battle.moldBreaker
       ret = Battle::AbilityEffects.triggerWeightCalc(self.ability, self, ret)
     end
-    if itemActive?
+    if itemActive?(items)  # Check if there are any active items
+        items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
       ret = Battle::ItemEffects.triggerWeightCalc(self.item, self, ret)
     end
+  end
     return [ret, 1].max
   end
 
@@ -424,14 +463,37 @@ class Battle::Battler
     return false if @battle.field.effects[PBEffects::MagicRoom] > 0
     return false if @battle.corrosiveGas[@index % 2][@pokemonIndex]
     return false if hasActiveAbility?(:KLUTZ, ignoreFainted)
-    return true
+  # If the conditions pass, return @items
+  return item.any? { |i| itemActive?(i) } if item.is_a?(Array)  # Handle multiple items
+
+  # If @items isn't empty, return true (meaning item is active)
+  return true
   end
 
-  def hasActiveItem?(check_item, ignore_fainted = false)
-    return false if !itemActive?(ignore_fainted)
-    return check_item.include?(@item_id) if check_item.is_a?(Array)
-    return self.item == check_item
+def hasActiveItem?(*args)
+  return false if fainted? || !@items || @items.empty?  # No items if fainted or empty
+
+  case args.length
+  when 0
+    puts "Checking if any item is held: #{@items}"
+    puts "✅ hasActiveItem? returned TRUE and is #{check_item}" if !@items.empty?
+    return true  # If no specific item is provided, just check if any item exists
+  when 1
+    check_item = args[0]
+    result = @items.include?(check_item) && !item_unusable?(check_item)
+    puts "Checking for specific item: #{check_item}, Held items: #{@items}"
+    puts "✅ hasActiveItem? returned TRUE and is #{check_item}" if result
+    return result
+  when 2
+    check_items, _some_boolean = args  # Extract arguments
+    result = check_items.any? { |item| @items.include?(item) && !item_unusable?(item) }
+    puts "Checking for multiple items: #{check_items}, Held items: #{@items}"
+    puts "✅ hasActiveItem? returned TRUE and is #{check_item}" if result
+    return result
+  else
+    raise ArgumentError, "Too many arguments passed to hasActiveItem?"
   end
+end
   alias hasWorkingItem hasActiveItem?
 
   # Returns whether the specified item will be unlosable for this Pokémon.
@@ -452,6 +514,12 @@ class Battle::Battler
     # Other unlosable items
     return item_data.unlosable?(@species, self.ability)
   end
+  
+  def item_unusable?(item)
+  return true if effects[PBEffects::Embargo] > 0  # Embargo prevents item usage
+  return true if battle.field.effects[PBEffects::MagicRoom] > 0  # Magic Room negates items
+  return false
+end
 
   def eachMove
     @moves.each { |m| yield m }
@@ -774,4 +842,63 @@ class Battle::Battler
     end
     return @battle.battlers[(@index ^ 1)]
   end
+
+  
+  #-------------------------------
+  # Initialize the multi-hit tracker here for Ashe Frost Shot
+  def initialize(*args)
+    super(*args)
+    @multi_hit_tracker = {}  # Initialize the multi-hit tracker properly
+    @ignore_first_hit_tracker = false  # Add flag to ignore first hit tracker for abilities like Frostshot
+  end
+
+  # Track the first hit of a multi-hit move
+  def first_hit_of_multi_hit?(move)
+    # Ensure the move is a multi-hit move
+    return false if !move.multiHitMove? || @ignore_first_hit_tracker  # Skip if not multi-hit or if we are ignoring for ability
+
+    # Initialize the tracker for the move if not already initialized
+    @multi_hit_tracker[move] ||= 0  # Initialize the count for this move to 0 if not yet tracked
+    
+    # Increment the hit count for this move
+    @multi_hit_tracker[move] += 1
+    # Return true only if this is the first hit (count is 1)
+    return @multi_hit_tracker[move] == 1
+  end
+
+  # Reset the multi-hit tracker when needed (e.g., end of turn or after move use)
+  def reset_multi_hit_tracker
+    @multi_hit_tracker = {}  # Clear the multi-hit tracker hash
+    @ignore_first_hit_tracker = false  # Reset the ignore flag
+  end
+  
+    # Method to trigger the ignore flag (to bypass tracker for abilities like Frostshot)
+  def ignore_first_hit_tracker_for_ability
+    @ignore_first_hit_tracker = false
+  end
 end
+
+ #----------------------
+ #Initial Speed
+ 
+  def track_initial_speed
+    if @initial_speed.nil?
+      @initial_speed = self.stages[:SPEED]  
+      puts "Tracking Initial Speed: #{@initial_speed}"  
+    else
+      puts "Initial Speed Already Tracked: #{@initial_speed}"
+    end
+  end
+  # Retrieve the initial speed
+  def initial_speed
+    @initial_speed
+  end
+  
+  def reset_initial_speed
+    if !@initial_speed.nil?
+      @initial_speed = nil 
+      puts "Initial Speed is now nil: #{@initial_speed}"  
+    else
+      puts "Initial Speed not nil: #{@initial_speed}"
+    end
+  end

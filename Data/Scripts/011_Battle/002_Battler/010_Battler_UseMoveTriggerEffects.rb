@@ -18,7 +18,6 @@ class Battle::Battler
         #       target Cramorant attacking the user) and the ability splash
         #       shouldn't be shown.
         @battle.pbShowAbilitySplash(target)
-        target.pbChangeForm(0, nil)
         if user.takesIndirectDamage?(Battle::Scene::USE_ABILITY_SPLASH)
           @battle.scene.pbDamageAnimation(user)
           user.pbReduceHP(user.totalhp / 4, false)
@@ -38,12 +37,15 @@ class Battle::Battler
         user.pbItemHPHealCheck
       end
       # Target's item
-      if target.itemActive?(true)
+      if target.itemActive?(target.items)  # Check if there are any active items
+        target.items.each do |item|  # Iterate over the items array
+        puts "✅ itemActive? is #{item}"
         oldHP = user.hp
-        Battle::ItemEffects.triggerOnBeingHit(target.item, user, target, move, @battle)
+        Battle::ItemEffects.triggerOnBeingHit(item, user, target, move, @battle)
         user.pbItemHPHealCheck if user.hp < oldHP
       end
     end
+  end
     if target.opposes?(user)
       # Rage
       if target.effects[PBEffects::Rage] && !target.fainted? &&
@@ -85,6 +87,18 @@ class Battle::Battler
   # Effects after all hits (i.e. at end of move usage)
   #=============================================================================
   def pbEffectsAfterMove(user, targets, move, numHits)
+    if move.id == :RANGERSFOCUS  # Change this condition for the specific move
+      if user.initial_speed # Ensure the value exists
+        speed_diff = (user.initial_speed + user.stages[:SPEED]).clamp(0,1)
+        puts "Speed diff: #{speed_diff}"
+        if speed_diff > 0 
+          user.pbLowerStatStage(:SPEED, speed_diff, nil) 
+          puts "Speed restored by #{speed_diff} stages!"
+          user.battle.pbDisplay(_INTL("{1} restored speed by {2} stages!", user.pbThis, speed_diff))
+          reset_initial_speed
+        end
+      end
+    end
     # Defrost
     if move.damagingMove?
       targets.each do |b|
@@ -178,18 +192,25 @@ class Battle::Battler
     # Target's held item (Eject Button, Red Card, Eject Pack)
     @battle.pbPriority(true).each do |b|
       if targets.any? { |targetB| targetB.index == b.index } &&
-         !b.damageState.unaffected && b.damageState.calcDamage > 0 && b.itemActive?
-        Battle::ItemEffects.triggerAfterMoveUseFromTarget(b.item, b, user, move, switched_battlers, @battle)
+         !b.damageState.unaffected && b.damageState.calcDamage > 0 && b.itemActive?(b.items)  # Check if there are any active items
+
+         user.items.each do |item|  # Iterate over the items array
+         puts "✅ itemActive? is #{item}"
+        Battle::ItemEffects.triggerAfterMoveUseFromTarget(item, b, user, move, switched_battlers, @battle)
       end
+    end
       # Target's Eject Pack
       if switched_battlers.empty? && b.index != user.index && b.pbItemOnStatDropped(user)
         switched_battlers.push(b.index)
       end
     end
     # User's held item (Life Orb, Shell Bell, Throat Spray, Eject Pack)
-    if !switched_battlers.include?(user.index) && user.itemActive?   # Only if user hasn't switched out
+    if !switched_battlers.include?(user.index) && user.itemActive?(user.items)  # Check if there are any active items
+      user.items.each do |item|  # Iterate over the items array
+      puts "✅ itemActive? is #{item}"
       Battle::ItemEffects.triggerAfterMoveUseFromUser(user.item, user, targets, move, numHits, @battle)
     end
+  end
     # Target's ability (Berserk, Color Change, Emergency Exit, Pickpocket, Wimp Out)
     @battle.pbPriority(true).each do |b|
       if targets.any? { |targetB| targetB.index == b.index } &&
