@@ -564,7 +564,7 @@ end
 # @return [Array<GameData::Item>] Array of item objects corresponding to this Pokémon's held items
   def items
     @items ||= []  # Ensure @items is always an array
-    @items.map { |item| GameData::Item.get(item) }
+    @items.map { |item| GameData::Item.get(item).id }
   end
 
 # Returns an array of held item IDs.

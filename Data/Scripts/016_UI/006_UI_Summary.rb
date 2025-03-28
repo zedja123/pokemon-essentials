@@ -350,10 +350,13 @@ class PokemonSummary_Scene
       [pagename, 26, 22, :left, base, shadow],
       [@pokemon.name, 46, 68, :left, base, shadow],
       [@pokemon.level.to_s, 46, 98, :left, Color.new(64, 64, 64), Color.new(176, 176, 176)],
-      [_INTL("Item"), 66, 324, :left, base, shadow]
+      [_INTL("Item(s)"), 66, 324, :left, base, shadow]
     ]
+
+
     # Write the held item's name
     if @pokemon.items.any?
+      puts @pokemon.items.inspect
       @pokemon.items.each_with_index do |item, index|
         # You can adjust the positioning based on the index if you want to display multiple items.
         textpos.push([item.name, 16, 358 + (index * 20), :left, Color.new(64, 64, 64), Color.new(176, 176, 176)])
