@@ -136,7 +136,9 @@ class PokemonSummary_Scene
     @sprites["pokeicon"].x       = 46
     @sprites["pokeicon"].y       = 92
     @sprites["pokeicon"].visible = false
-    @sprites["itemicon"] = ItemIconSprite.new(30, 320, @pokemon.item_id, @viewport)
+    @sprites["itemicon"] = ItemIconSprite.new(30, 320, @pokemon.items[0], @viewport)
+    @sprites["itemicon2"] = ItemIconSprite.new(60, 320, @pokemon.items[1], @viewport)
+    @sprites["itemicon3"] = ItemIconSprite.new(90, 320, @pokemon.items[2], @viewport)
     @sprites["itemicon"].blankzero = true
     @sprites["overlay"] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
     pbSetSystemFont(@sprites["overlay"].bitmap)
@@ -351,8 +353,11 @@ class PokemonSummary_Scene
       [_INTL("Item"), 66, 324, :left, base, shadow]
     ]
     # Write the held item's name
-    if @pokemon.hasItem?
-      textpos.push([@pokemon.item.name, 16, 358, :left, Color.new(64, 64, 64), Color.new(176, 176, 176)])
+    if @pokemon.items.any?
+      @pokemon.items.each_with_index do |item, index|
+        # You can adjust the positioning based on the index if you want to display multiple items.
+        textpos.push([item.name, 16, 358 + (index * 20), :left, Color.new(64, 64, 64), Color.new(176, 176, 176)])
+      end
     else
       textpos.push([_INTL("None"), 16, 358, :left, Color.new(192, 200, 208), Color.new(208, 216, 224)])
     end
