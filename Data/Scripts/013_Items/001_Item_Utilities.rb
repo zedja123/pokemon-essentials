@@ -808,7 +808,7 @@ def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
     held_items = pkmn.items.map { |i| GameData::Item.get(i).portion_name }.join(", ")
     # Add item only if it's not already held
     unless pkmn.items.include?(item)
-      if scene.pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
+      if pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
         puts "Items before adding: #{pkmn.items.inspect}"
         puts "Attempting to add item: #{item}"
         puts "Is item valid? #{GameData::Item.exists?(item)}"
@@ -846,7 +846,7 @@ def pbTakeItemFromPokemon(pkmn, scene)
   if pkmn.items.length > 1
     commands = pkmn.items.map { |i| GameData::Item.get(i).portion_name }
     commands.push(_INTL("Cancel"))
-    item_index = scene.pbShowCommands(commands,_INTL("Choose an item to take:"), 0)
+    item_index = scene.pbShowCommands(_INTL("Choose an item to take:"), commands, 0)
 
     return false if item_index < 0 || item_index >= pkmn.items.length  # Cancel selected
 
@@ -863,7 +863,7 @@ def pbTakeItemFromPokemon(pkmn, scene)
 
   # Handle mail cases
   if pkmn.mail
-    if scene.pbConfirm(_INTL("Save the removed mail in your PC?"))
+    if pbConfirm(_INTL("Save the removed mail in your PC?"))
       if pbMoveToMailbox(pkmn)
         scene.pbDisplay(_INTL("The mail was saved in your PC."))
         pkmn.remove_item(item)

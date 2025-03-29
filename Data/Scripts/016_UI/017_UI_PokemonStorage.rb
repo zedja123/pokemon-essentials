@@ -1458,11 +1458,49 @@ class PokemonStorageScene
       else
         textstrings.push([_INTL("No ability"), 86, 312, :center, nonbase, nonshadow])
       end
-      if pokemon.item
-        textstrings.push([pokemon.item.name, 86, 348, :center, base, shadow])
-      else
-        textstrings.push([_INTL("No item"), 86, 348, :center, nonbase, nonshadow])
+      if !pokemon.items.empty?
+      puts "POKEMON ITEMS INSPECT FOR TEXT: #{pokemon.items.inspect}"
+      pbDrawTextPositions(overlay, textstrings)
+      textstrings.clear
+      pbSetSmallFont(overlay)
+    
+      # Loop through all 3 slots (assuming a max of 3 items)
+      3.times do |slot|
+        item = pokemon.items[slot]
+        puts "#{item}"
+        x_offset = 35 + (slot * 50) # Adjust horizontal spacing
+    
+        if item.nil?
+          textstrings.push(["None", x_offset, 352, :center, Color.new(192, 200, 208), Color.new(208, 216, 224)])
+        else
+          item_name = GameData::Item.get(item).name.split(" ") # Split the name into words
+          line_count = item_name.length # Number of lines
+          y_offset = 352 - (line_count - 1) * 10 # Adjust vertical centering
+    
+          # Push each word, creating a new line for each one
+          item_name.each_with_index do |word, word_index|
+            textstrings.push([word, x_offset, y_offset + (word_index * 20), :center, Color.new(64, 64, 64), Color.new(176, 176, 176)])
+          end
+        end
       end
+    else
+      # Loop through all 3 slots (assuming a max of 3 items)
+      pbDrawTextPositions(overlay, textstrings)
+      textstrings.clear
+      pbSetSmallFont(overlay)
+      3.times do |slot|
+        item = pokemon.items[slot]
+        puts "#{item}"
+        x_offset = 35 + (slot * 50) # Adjust horizontal spacing
+    
+        if item.nil?
+          textstrings.push(["None", x_offset, 352, :center, Color.new(192, 200, 208), Color.new(208, 216, 224)])
+        end
+      end
+  end
+      pbDrawTextPositions(overlay, textstrings)
+      textstrings.clear
+      pbSetSystemFont(overlay)
       imagepos.push(["Graphics/UI/shiny", 156, 198]) if pokemon.shiny?
       typebitmap = AnimatedBitmap.new(_INTL("Graphics/UI/types"))
       pokemon.types.each_with_index do |type, i|
@@ -1903,32 +1941,28 @@ class PokemonStorageScreen
     box = selected[0]
     index = selected[1]
     pokemon = (heldpoke) ? heldpoke : @storage[box, index]
-    if pokemon.egg?
-      pbDisplay(_INTL("Eggs can't hold items."))
-      return
-    elsif pokemon.mail
-      pbDisplay(_INTL("Please remove the mail."))
-      return
-    end
-    if pokemon.item
-      itemname = pokemon.item.portion_name
-      if pbConfirm(_INTL("Take the {1}?", itemname))
-        if $bag.add(pokemon.item)
-          pbDisplay(_INTL("Took the {1}.", itemname))
-          pokemon.item = nil
-          @scene.pbHardRefresh
-        else
-          pbDisplay(_INTL("Can't store the {1}.", itemname))
-        end
+  
+    if !pokemon.items.empty?
+      commands = [_INTL("Give"), _INTL("Take")]
+      choice = scene.pbShowCommands(_INTL("{1} has items, choose an option:", pokemon.name), commands, 0)
+  
+      if choice == 0  # Give item
+        item = pbChooseItem
+        return if !item  # If no item was selected, do nothing
+        pbGiveItemToPokemon(item, pokemon, scene)
+      elsif choice == 1  # Take item
+        pbTakeItemFromPokemon(pokemon, scene)
       end
     else
-      item = scene.pbChooseItem($bag)
-      if item
-        itemname = GameData::Item.get(item).name
-        pokemon.item = item
-        $bag.remove(item)
-        pbDisplay(_INTL("{1} is now being held.", itemname))
-        @scene.pbHardRefresh
+      commands = [_INTL("Yes"), _INTL("No")]
+      choice = scene.pbShowCommands(_INTL("{1} doesn't have any items. Give an item?", pokemon.name), commands, 0)
+  
+      if choice == 0  # Yes
+        item = pbChooseItem
+        return if !item  # If no item was selected, do nothing
+        pbGiveItemToPokemon(item, pokemon, scene)
+      elsif choice == 1  # No
+        return
       end
     end
   end

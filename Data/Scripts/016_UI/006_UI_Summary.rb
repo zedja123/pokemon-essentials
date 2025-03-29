@@ -300,7 +300,7 @@ class PokemonSummary_Scene
     (@markingbitmap.bitmap.width / MARK_WIDTH).times do |i|
       markrect.x = i * MARK_WIDTH
       markrect.y = [(markings[i] || 0), mark_variants - 1].min * MARK_HEIGHT
-      bitmap.blt(x + (i * MARK_WIDTH), y, @markingbitmap.bitmap, markrect)
+      bitmap.blt(x, y + (i * MARK_HEIGHT), @markingbitmap.bitmap, markrect)
     end
   end
 
@@ -377,7 +377,7 @@ class PokemonSummary_Scene
       textpos.push([_INTL("♀"), 178, 68, :left, Color.new(248, 56, 32), Color.new(224, 152, 144)])
     end
     # Draw the Pokémon's markings
-    drawMarkings(overlay, 84, 292)
+    drawMarkings(overlay, 186, 143)
     # Draw page-specific information
     case page
     when 1 then drawPageOne
