@@ -835,32 +835,56 @@ end
 
 def pbTakeItemFromPokemon(pkmn, scene)
   ret = false
-  if !pkmn.hasItem?
+  pkmn.items ||= []
+
+  if pkmn.items.empty?
     scene.pbDisplay(_INTL("{1} isn't holding anything.", pkmn.name))
-  elsif !$bag.can_add?(pkmn.item)
+    return false
+  end
+
+  # If Pokémon holds multiple items, let the player choose one
+  if pkmn.items.length > 1
+    commands = pkmn.items.map { |i| GameData::Item.get(i).portion_name }
+    commands.push(_INTL("Cancel"))
+    item_index = scene.pbShowCommands(_INTL("Choose an item to take:"), commands, commands.length)
+
+    return false if item_index < 0 || item_index >= pkmn.items.length  # Cancel selected
+
+    item = pkmn.items[item_index]
+  else
+    item = pkmn.items.first
+  end
+
+  # Check if bag has space
+  unless $bag.can_add?(item)
     scene.pbDisplay(_INTL("The Bag is full. The Pokémon's item could not be removed."))
-  elsif pkmn.mail
+    return false
+  end
+
+  # Handle mail cases
+  if pkmn.mail
     if scene.pbConfirm(_INTL("Save the removed mail in your PC?"))
       if pbMoveToMailbox(pkmn)
         scene.pbDisplay(_INTL("The mail was saved in your PC."))
-        pkmn.item = nil
+        pkmn.remove_item(item)
         ret = true
       else
         scene.pbDisplay(_INTL("Your PC's Mailbox is full."))
       end
     elsif scene.pbConfirm(_INTL("If the mail is removed, its message will be lost. OK?"))
-      $bag.add(pkmn.item)
-      scene.pbDisplay(_INTL("Received the {1} from {2}.", pkmn.item.portion_name, pkmn.name))
-      pkmn.item = nil
+      $bag.add(item)
+      scene.pbDisplay(_INTL("Received the {1} from {2}.", GameData::Item.get(item).portion_name, pkmn.name))
+      pkmn.remove_item(item)
       pkmn.mail = nil
       ret = true
     end
   else
-    $bag.add(pkmn.item)
-    scene.pbDisplay(_INTL("Received the {1} from {2}.", pkmn.item.portion_name, pkmn.name))
-    pkmn.item = nil
+    $bag.add(item)
+    scene.pbDisplay(_INTL("Received the {1} from {2}.", GameData::Item.get(item).portion_name, pkmn.name))
+    pkmn.remove_item(item)
     ret = true
   end
+
   return ret
 end
 #===============================================================================

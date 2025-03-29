@@ -1461,10 +1461,14 @@ MenuHandlers.add(:party_menu_item, :give, {
 MenuHandlers.add(:party_menu_item, :take, {
   "name"      => _INTL("Take"),
   "order"     => 30,
-  "condition" => proc { |screen, party, party_idx| next party[party_idx].hasItem? },
+  "condition" => proc { |screen, party, party_idx|
+    pkmn = party[party_idx]
+    next false if !pkmn || !pkmn.respond_to?(:items) # Ensure the Pokémon exists and has items
+    next !pkmn.items.empty? # Make sure the Pokémon has at least one item
+  },
   "effect"    => proc { |screen, party, party_idx|
     pkmn = party[party_idx]
-    next if !pbTakeItemFromPokemon(pkmn, screen)
+    next if !pkmn || !pbTakeItemFromPokemon(pkmn, screen) # Extra safety check
     screen.pbRefreshSingle(party_idx)
   }
 })

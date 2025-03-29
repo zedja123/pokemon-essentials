@@ -589,8 +589,16 @@ end
 # Removes a specific held item (if it exists).
 # @param value [Symbol, String, GameData::Item] ID of the item to remove
 def remove_item(value)
-  return if value.nil?
-  @items.delete(GameData::Item.get(value).id)
+  return if value.nil? || !GameData::Item.exists?(value)
+  
+  # Ensure @items is an array
+  return unless @items.is_a?(Array)
+
+  # If value is a GameData::Item, get its id; otherwise, use the value directly (symbol)
+  item_symbol = value.is_a?(GameData::Item) ? value.id : value
+  
+  # Delete the item by its symbol or ID
+  @items.delete(item_symbol)
 end
 
 # Removes all held items from the Pokémon.

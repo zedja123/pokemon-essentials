@@ -129,17 +129,19 @@ class PokemonSummary_Scene
     @sprites["pokemon"] = PokemonSprite.new(@viewport)
     @sprites["pokemon"].setOffset(PictureOrigin::CENTER)
     @sprites["pokemon"].x = 104
-    @sprites["pokemon"].y = 206
+    @sprites["pokemon"].y = 180
     @sprites["pokemon"].setPokemonBitmap(@pokemon)
     @sprites["pokeicon"] = PokemonIconSprite.new(@pokemon, @viewport)
     @sprites["pokeicon"].setOffset(PictureOrigin::CENTER)
     @sprites["pokeicon"].x       = 46
     @sprites["pokeicon"].y       = 92
     @sprites["pokeicon"].visible = false
-    @sprites["itemicon"] = ItemIconSprite.new(30, 320, @pokemon.items[0], @viewport)
-    @sprites["itemicon2"] = ItemIconSprite.new(60, 320, @pokemon.items[1], @viewport)
-    @sprites["itemicon3"] = ItemIconSprite.new(90, 320, @pokemon.items[2], @viewport)
+    @sprites["itemicon"] = ItemIconSprite.new(35, 305, @pokemon.items[0], @viewport)
+    @sprites["itemicon2"] = ItemIconSprite.new(100, 305, @pokemon.items[1], @viewport)
+    @sprites["itemicon3"] = ItemIconSprite.new(165, 305, @pokemon.items[2], @viewport)
     @sprites["itemicon"].blankzero = true
+    @sprites["itemicon2"].blankzero = true
+    @sprites["itemicon3"].blankzero = true
     @sprites["overlay"] = BitmapSprite.new(Graphics.width, Graphics.height, @viewport)
     pbSetSystemFont(@sprites["overlay"].bitmap)
     @sprites["movepresel"] = MoveSelectionSprite.new(@viewport)
@@ -307,6 +309,7 @@ class PokemonSummary_Scene
       drawPageOneEgg
       return
     end
+    puts "Entering drawPage method"
     @sprites["pokemon"].setPokemonBitmap(@pokemon)
     @sprites["pokeicon"].pokemon = @pokemon
     @sprites["itemicon"].item = @pokemon.item_id
@@ -352,14 +355,17 @@ class PokemonSummary_Scene
       [@pokemon.level.to_s, 46, 98, :left, Color.new(64, 64, 64), Color.new(176, 176, 176)],
       [_INTL("Item(s)"), 66, 324, :left, base, shadow]
     ]
-
-
+    puts "POKEMON ITEMS: #{@pokemon.items.inspect}"
+    puts "ITEMS CLASS: #{@pokemon.items.class}"
+    puts "ITEMS EMPTY?: #{@pokemon.items.empty?}"
+    puts "ITEMS ANY?: #{@pokemon.items.any?}"
+    puts "ITEMS SIZE: #{@pokemon.items.size}"
     # Write the held item's name
-    if @pokemon.items.length > 0
-      puts @pokemon.items.inspect
+    if !@pokemon.items.empty?
+      puts "POKEMON ITEMS INSPECT FOR TEXT: #{@pokemon.items.inspect}"
       @pokemon.items.each_with_index do |item, index|
         # You can adjust the positioning based on the index if you want to display multiple items.
-        textpos.push([item.name, 16, 358 + (index * 20), :left, Color.new(64, 64, 64), Color.new(176, 176, 176)])
+        textpos.push([item.name, 16 + (index * 20), 358, :left, Color.new(64, 64, 64), Color.new(176, 176, 176)])
       end
     else
       textpos.push([_INTL("None"), 16, 358, :left, Color.new(192, 200, 208), Color.new(208, 216, 224)])
@@ -370,8 +376,6 @@ class PokemonSummary_Scene
     elsif @pokemon.female?
       textpos.push([_INTL("♀"), 178, 68, :left, Color.new(248, 56, 32), Color.new(224, 152, 144)])
     end
-    # Draw all text
-    pbDrawTextPositions(overlay, textpos)
     # Draw the Pokémon's markings
     drawMarkings(overlay, 84, 292)
     # Draw page-specific information
@@ -504,10 +508,11 @@ class PokemonSummary_Scene
     textpos = [
       [_INTL("TRAINER MEMO"), 26, 22, :left, base, shadow],
       [@pokemon.name, 46, 68, :left, base, shadow],
-      [_INTL("Item"), 66, 324, :left, base, shadow]
+      [_INTL("Item(s)"), 66, 324, :left, base, shadow]
     ]
     # Write the held item's name
-    if @pokemon.hasItem?
+    if @pokemon.items.length > 0
+      puts "entering texpost push for item name"
       textpos.push([@pokemon.item.name, 16, 358, :left, Color.new(64, 64, 64), Color.new(176, 176, 176)])
     else
       textpos.push([_INTL("None"), 16, 358, :left, Color.new(192, 200, 208), Color.new(208, 216, 224)])
