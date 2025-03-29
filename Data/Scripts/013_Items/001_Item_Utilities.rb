@@ -846,7 +846,7 @@ def pbTakeItemFromPokemon(pkmn, scene)
   if pkmn.items.length > 1
     commands = pkmn.items.map { |i| GameData::Item.get(i).portion_name }
     commands.push(_INTL("Cancel"))
-    item_index = scene.pbShowCommands(_INTL("Choose an item to take:"), commands, commands.length)
+    item_index = scene.pbShowCommands(commands,_INTL("Choose an item to take:"), 0)
 
     return false if item_index < 0 || item_index >= pkmn.items.length  # Cancel selected
 
