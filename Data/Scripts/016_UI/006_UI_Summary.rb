@@ -355,7 +355,7 @@ class PokemonSummary_Scene
 
 
     # Write the held item's name
-    if @pokemon.items.any?
+    if @pokemon.items.length > 0
       puts @pokemon.items.inspect
       @pokemon.items.each_with_index do |item, index|
         # You can adjust the positioning based on the index if you want to display multiple items.
