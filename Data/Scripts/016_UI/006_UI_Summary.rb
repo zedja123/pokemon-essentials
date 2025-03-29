@@ -405,8 +405,8 @@ class PokemonSummary_Scene
     end
     # Write various bits of text
     textpos = [
-      [_INTL("Dex No."), 238, 86, :left, base, shadow],
-      [_INTL("Species"), 238, 118, :left, base, shadow],
+      [_INTL("Valoran No."), 238, 86, :left, base, shadow],
+      [_INTL("Champion"), 238, 118, :left, base, shadow],
       [@pokemon.speciesName, 435, 118, :center, Color.new(64, 64, 64), Color.new(176, 176, 176)],
       [_INTL("Type"), 238, 150, :left, base, shadow],
       [_INTL("OT"), 238, 182, :left, base, shadow],
