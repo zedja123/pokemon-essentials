@@ -808,7 +808,7 @@ def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
     held_items = pkmn.items.map { |i| GameData::Item.get(i).portion_name }.join(", ")
     # Add item only if it's not already held
     unless pkmn.items.include?(item)
-      if pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
+      if scene.pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
         puts "Items before adding: #{pkmn.items.inspect}"
         puts "Attempting to add item: #{item}"
         puts "Is item valid? #{GameData::Item.exists?(item)}"
@@ -838,7 +838,7 @@ def pbTakeItemFromPokemon(pkmn, scene)
   pkmn.items ||= []
 
   if pkmn.items.empty?
-    scene.pbDisplay(_INTL("{1} isn't holding anything.", pkmn.name))
+    scene.pbDisplay( pkmn.name, _INTL("{1} isn't holding anything."))
     return false
   end
 

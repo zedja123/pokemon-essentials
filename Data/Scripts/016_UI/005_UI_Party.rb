@@ -586,7 +586,7 @@ class PokemonParty_Scene
     return ret
   end
 
-  def pbShowCommands(helptext, commands, index = 0)
+  def pbShowCommands(commands, helptext = nil, index = 0)
     ret = -1
     helpwindow = @sprites["helpwindow"]
     helpwindow.visible = true
@@ -983,7 +983,7 @@ class PokemonPartyScreen
     return @scene.pbDisplayConfirm(text)
   end
 
-  def pbShowCommands(helptext, commands, index = 0)
+  def pbShowCommands(commands, helptext,  index = 0)
     return @scene.pbShowCommands(helptext, commands, index)
   end
 
@@ -1425,7 +1425,7 @@ MenuHandlers.add(:party_menu, :item, {
     end
     command_list.push(_INTL("Cancel"))
     # Choose a menu option
-    choice = screen.scene.pbShowCommands(_INTL("Do what with an item?"), command_list)
+    choice = screen.scene.pbShowCommands(command_list, _INTL("Do what with an item?"),)
     next if choice < 0 || choice >= commands.length
     commands[choice]["effect"].call(screen, party, party_idx)
   }
