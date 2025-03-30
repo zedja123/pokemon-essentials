@@ -934,7 +934,26 @@ class PokemonSummary_Scene
   def pbChangePokemon
     @pokemon = @party[@partyindex]
     @sprites["pokemon"].setPokemonBitmap(@pokemon)
-    @sprites["itemicon"].item = @pokemon.item_id
+    if @sprites["itemicon"]
+      @sprites["itemicon"].dispose
+      @sprites.delete("itemicon")
+    end
+    # Dispose of the existing sprite if it exists
+    if @sprites["itemicon2"]
+      @sprites["itemicon2"].dispose
+      @sprites.delete("itemicon2")
+    end
+    # Dispose of the existing sprite if it exists
+    if @sprites["itemicon3"]
+      @sprites["itemicon3"].dispose
+      @sprites.delete("itemicon3")
+    end
+          @sprites["itemicon"] = ItemIconSprite.new(34, 305, @pokemon.items[0], @viewport)
+          @sprites["itemicon2"] = ItemIconSprite.new(100, 305, @pokemon.items[1], @viewport)
+          @sprites["itemicon3"] = ItemIconSprite.new(166, 305, @pokemon.items[2], @viewport)
+          @sprites["itemicon"].blankzero = true
+          @sprites["itemicon2"].blankzero = true
+          @sprites["itemicon3"].blankzero = true
     pbSEStop
     @pokemon.play_cry
   end
