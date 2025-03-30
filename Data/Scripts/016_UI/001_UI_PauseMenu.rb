@@ -131,7 +131,7 @@ end
 # Pause menu commands.
 #===============================================================================
 MenuHandlers.add(:pause_menu, :pokedex, {
-  "name"      => _INTL("Pokédex"),
+  "name"      => _INTL("Valoram"),
   "order"     => 10,
   "condition" => proc { next $player.has_pokedex && $player.pokedex.accessible_dexes.length > 0 },
   "effect"    => proc { |menu|
@@ -164,7 +164,7 @@ MenuHandlers.add(:pause_menu, :pokedex, {
 })
 
 MenuHandlers.add(:pause_menu, :party, {
-  "name"      => _INTL("Pokémon"),
+  "name"      => _INTL("Champions"),
   "order"     => 20,
   "condition" => proc { next $player.party_count > 0 },
   "effect"    => proc { |menu|
