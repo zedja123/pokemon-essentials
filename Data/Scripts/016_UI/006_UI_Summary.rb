@@ -268,7 +268,7 @@ class PokemonSummary_Scene
     return ret
   end
 
-  def pbShowCommands(commands, helptext = nil,  index = 0)
+  def pbShowCommands(helptext, commands, index = 0)
     ret = -1
     using(cmdwindow = Window_CommandPokemon.new(commands)) do
       cmdwindow.z = @viewport.z + 1

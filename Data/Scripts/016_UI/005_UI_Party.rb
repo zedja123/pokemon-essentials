@@ -588,6 +588,11 @@ class PokemonParty_Scene
 
   def pbShowCommands(helptext, commands, index = 0)
     ret = -1
+  
+    # Debugging outputs
+    puts "Commands: #{commands.class} - #{commands.inspect}"
+    puts "Helptext: #{helptext.class} - #{helptext.inspect}"
+  
     helpwindow = @sprites["helpwindow"]
     helpwindow.visible = true
     using(cmdwindow = Window_CommandPokemonColor.new(commands)) do
@@ -615,6 +620,7 @@ class PokemonParty_Scene
     end
     return ret
   end
+  
 
   def pbChooseNumber(helptext, maximum, initnum = 1)
     return UIHelper.pbChooseNumber(@sprites["helpwindow"], helptext, maximum, initnum) { update }
