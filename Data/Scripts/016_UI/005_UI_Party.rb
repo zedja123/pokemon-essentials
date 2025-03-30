@@ -983,8 +983,8 @@ class PokemonPartyScreen
     return @scene.pbDisplayConfirm(text)
   end
 
-  def pbShowCommands(commands, helptext,  index = 0)
-    return @scene.pbShowCommands(helptext, commands, index)
+  def pbShowCommands(commands, helptext = nil,  index = 0)
+    return @scene.pbShowCommands(commands, helptext, index)
   end
 
   # Checks for identical species.
