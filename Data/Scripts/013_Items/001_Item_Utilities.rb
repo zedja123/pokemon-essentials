@@ -808,12 +808,9 @@ def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
     held_items = pkmn.items.map { |i| GameData::Item.get(i).portion_name }.join(", ")
     # Add item only if it's not already held
     unless pkmn.items.include?(item)
-      if scene.pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
-        puts "Items before adding: #{pkmn.items.inspect}"
-        puts "Attempting to add item: #{item}"
-        puts "Is item valid? #{GameData::Item.exists?(item)}"
-        pkmn.add_item(item)  # Use add_item method here
-        puts "Items after adding: #{pkmn.items.inspect}"
+      user_input = pbMessage(_INTL("Would you like to add {1} to the held items?", newitemname), ["Yes", "No"], 0)
+      if user_input == 0
+        pkmn.add_item(item)
         $bag.remove(item)
         scene.pbDisplay(_INTL("{1} is now also holding the {2}.", pkmn.name, newitemname))
         return true
@@ -823,15 +820,13 @@ def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
       return false
     end
   else
-    puts "No items present, entering last else block"
-    puts "Adding item: #{item}"
-    pkmn.add_item(item)  # Use add_item method here
-    puts "Items after adding: #{pkmn.items.inspect}"
+    pkmn.add_item(item)
     $bag.remove(item)
     scene.pbDisplay(_INTL("{1} is now holding the {2}.", pkmn.name, newitemname))
     return true
   end
 end
+
 
 def pbTakeItemFromPokemon(pkmn, scene)
   ret = false
