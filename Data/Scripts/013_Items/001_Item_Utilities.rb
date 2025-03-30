@@ -779,6 +779,7 @@ end
 # Give an item to a Pokémon to hold, and take a held item from a Pokémon
 #===============================================================================
 def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
+  p scene.class
   newitemname = GameData::Item.get(item).portion_name
   puts "Is pkmn.items an array? #{pkmn.items.is_a?(Array)}"
   puts "Is pkmn.items frozen? #{pkmn.items.frozen?}"
@@ -808,14 +809,25 @@ def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
     held_items = pkmn.items.map { |i| GameData::Item.get(i).portion_name }.join(", ")
     # Add item only if it's not already held
     unless pkmn.items.include?(item)
-      if scene.pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
-        puts "Items before adding: #{pkmn.items.inspect}"
-        puts "Attempting to add item: #{item}"
-        puts "Is item valid? #{GameData::Item.exists?(item)}"
-        pkmn.add_item(item)  # Use add_item method here
-        puts "Items after adding: #{pkmn.items.inspect}"
-        $bag.remove(item)
-        scene.pbDisplay(_INTL("{1} is now also holding the {2}.", pkmn.name, newitemname))
+        if scene.is_a?(PokemonStorageScene)
+          pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
+          puts "Items before adding: #{pkmn.items.inspect}"
+          puts "Attempting to add item: #{item}"
+          puts "Is item valid? #{GameData::Item.exists?(item)}"
+          pkmn.add_item(item)  # Use add_item method here
+          puts "Items after adding: #{pkmn.items.inspect}"
+          $bag.remove(item)
+          scene.pbDisplay(_INTL("{1} is now also holding the {2}.", pkmn.name, newitemname))
+          return true
+        else
+          scene.pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
+          puts "Items before adding: #{pkmn.items.inspect}"
+          puts "Attempting to add item: #{item}"
+          puts "Is item valid? #{GameData::Item.exists?(item)}"
+          pkmn.add_item(item)  # Use add_item method here
+         puts "Items after adding: #{pkmn.items.inspect}"
+         $bag.remove(item)
+         scene.pbDisplay(_INTL("{1} is now also holding the {2}.", pkmn.name, newitemname))
         return true
       end
     else
@@ -846,8 +858,11 @@ def pbTakeItemFromPokemon(pkmn, scene)
   if pkmn.items.length > 1
     commands = pkmn.items.map { |i| GameData::Item.get(i).portion_name }
     commands.push(_INTL("Cancel"))
+    if !scene.is_a?(PokemonStorageScene)
     item_index = scene.pbShowCommands(commands, _INTL("Choose an item to take:"), 0)
-
+    else
+    item_index = scene.pbShowCommands(_INTL("Choose an item to take:"), commands, 0)  
+    end
     return false if item_index < 0 || item_index >= pkmn.items.length  # Cancel selected
 
     item = pkmn.items[item_index]

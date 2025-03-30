@@ -1717,8 +1717,18 @@ class PokemonStorageScreen
   end
 
   def pbConfirm(str)
-    return pbShowCommands(str, [_INTL("Yes"), _INTL("No")]) == 0
+    options = [_INTL("Yes"), _INTL("No")]
+    puts "pbConfirm called with: #{str}"
+    puts "Options: #{options.inspect}"
+    puts "pbShowCommands available? #{respond_to?(:pbShowCommands)}"
+  
+    if options.any?(&:nil?)
+      raise "pbConfirm Error: Options array contains nil! #{options.inspect}"
+    end
+  
+    return pbShowCommands(str, options) == 0
   end
+  
 
   def pbShowCommands(msg, commands, index = 0)
     return @scene.pbShowCommands(msg, commands, index)
