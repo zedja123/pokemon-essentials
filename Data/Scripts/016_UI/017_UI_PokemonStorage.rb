@@ -678,41 +678,26 @@ class PokemonStorageScene
 
   def pbShowCommands(message, commands, index = 0)
     ret = -1
-  
-    # Ensure commands is an array
-    unless commands.is_a?(Array)
-      raise RuntimeError, "Commands must be an array, but received #{commands.class}"
-    end
-  
-    # Ensure message is treated as a string
-    message = message.is_a?(Array) ? message.join(" ") : message
-  
-    # Create the window for displaying the message
     msgwindow = Window_UnformattedTextPokemon.newWithSize("", 180, 0, Graphics.width - 180, 32)
-    msgwindow.viewport = @viewport
-    msgwindow.visible = true
+    msgwindow.viewport       = @viewport
+    msgwindow.visible        = true
     msgwindow.letterbyletter = false
-    msgwindow.text = message
+    msgwindow.text           = message
     msgwindow.resizeHeightToFit(message, Graphics.width - 180)
     pbBottomRight(msgwindow)
-  
-    # Create the command window with the list of commands
     cmdwindow = Window_CommandPokemon.new(commands)
     cmdwindow.viewport = @viewport
-    cmdwindow.visible = true
+    cmdwindow.visible  = true
     cmdwindow.resizeToFit(cmdwindow.commands)
     cmdwindow.height = Graphics.height - msgwindow.height if cmdwindow.height > Graphics.height - msgwindow.height
     pbBottomRight(cmdwindow)
     cmdwindow.y -= msgwindow.height
     cmdwindow.index = index
-  
-    # Handle user input for command selection
     loop do
       Graphics.update
       Input.update
       msgwindow.update
       cmdwindow.update
-  
       if Input.trigger?(Input::BACK)
         ret = -1
         break
@@ -722,12 +707,9 @@ class PokemonStorageScene
       end
       self.update
     end
-  
-    # Clean up windows
     msgwindow.dispose
     cmdwindow.dispose
     Input.update
-  
     return ret
   end
 

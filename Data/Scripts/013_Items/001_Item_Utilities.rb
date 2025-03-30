@@ -837,23 +837,20 @@ def pbTakeItemFromPokemon(pkmn, scene)
     return false
   end
 
-  # Ensure the commands are always an array
-  commands = pkmn.items.map { |i| GameData::Item.get(i).portion_name }
-  commands.push(_INTL("Cancel"))
+  # If Pokémon holds multiple items, let the player choose one
+  if pkmn.items.length > 1
+    commands = pkmn.items.map { |i| GameData::Item.get(i).portion_name }
+    commands.push(_INTL("Cancel"))
+    item_index = scene.pbShowCommands(commands, _INTL("Choose an item to take:"), 0)
 
-  # Debugging step: Ensure commands is an array before calling pbShowCommands
-  if !commands.is_a?(Array)
-    raise RuntimeError, "Commands must be an array, but received #{commands.class}."
+    return false if item_index < 0 || item_index >= pkmn.items.length  # Cancel selected
+
+    item = pkmn.items[item_index]
+  else
+    item = pkmn.items.first
   end
 
-  # Now call pbShowCommands
-  item_index = scene.pbShowCommands(_INTL("Choose an item to take:"), commands,  0)
-
-  return false if item_index < 0 || item_index >= pkmn.items.length  # Cancel selected
-
-  item = pkmn.items[item_index]
-
-  # Check if the bag has space for the item
+  # Check if bag has space
   unless $bag.can_add?(item)
     scene.pbDisplay(_INTL("The Bag is full. The Pokémon's item could not be removed."))
     return false
@@ -885,8 +882,6 @@ def pbTakeItemFromPokemon(pkmn, scene)
 
   return ret
 end
-
-
 #===============================================================================
 # Choose an item from the Bag
 #===============================================================================
