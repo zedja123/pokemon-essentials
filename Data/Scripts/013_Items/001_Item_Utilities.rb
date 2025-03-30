@@ -808,7 +808,7 @@ def pbGiveItemToPokemon(item, pkmn, scene, pkmnid = 0)
     held_items = pkmn.items.map { |i| GameData::Item.get(i).portion_name }.join(", ")
     # Add item only if it's not already held
     unless pkmn.items.include?(item)
-      if scene.pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
+      if pbConfirm(_INTL("Would you like to add the {1} to the held items?", newitemname))
         puts "Items before adding: #{pkmn.items.inspect}"
         puts "Attempting to add item: #{item}"
         puts "Is item valid? #{GameData::Item.exists?(item)}"
@@ -897,9 +897,7 @@ def pbChooseItem(var = 0, *args)
     screen = PokemonBagScreen.new(scene, $bag)
     ret = screen.pbChooseItemScreen
   end
-  if var.is_a?(Integer) && var > 0
-    $game_variables[var] = ret || :NONE
-  end
+  $game_variables[var] = ret || :NONE if var > 0
   return ret
 end
 
