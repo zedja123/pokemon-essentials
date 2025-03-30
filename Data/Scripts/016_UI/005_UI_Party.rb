@@ -1450,9 +1450,11 @@ MenuHandlers.add(:party_menu_item, :give, {
   "order"     => 20,
   "effect"    => proc { |screen, party, party_idx|
     pkmn = party[party_idx]
-    item = screen.scene.pbChooseItem($bag) do
-      screen.scene.pbSetHelpText((party.length > 1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
+    item = screen.pbChooseItem($bag) do
+      screen.pbSetHelpText((party.length > 1) ? _INTL("Choose a Pokémon.") : _INTL("Choose Pokémon or cancel."))
     end
+    
+    # Proceed if item is valid
     next if !item || !pbGiveItemToPokemon(item, pkmn, screen, party_idx)
     screen.pbRefreshSingle(party_idx)
   }
